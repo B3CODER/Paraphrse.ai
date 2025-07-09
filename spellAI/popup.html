@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Change BG Color</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f7fa;
+      margin: 0;
+      padding: 0;
+      min-width: 320px;
+      min-height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(44,62,80,0.13);
+      padding: 32px 28px 22px 28px;
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      text-align: center;
+      color: #222;
+    }
+    .subtitle {
+      font-size: 1rem;
+      color: #555;
+      text-align: center;
+      margin: 0 0 10px 0;
+    }
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    input[type="password"], input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+      background: #f9fafd;
+    }
+    input[type="password"]:focus, input[type="text"]:focus {
+      border: 1.5px solid #4f8cff;
+    }
+    #toggle-key-visibility {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0 6px;
+      color: #888;
+      border-radius: 6px;
+      transition: background 0.15s;
+      height: 36px;
+    }
+    #toggle-key-visibility:hover {
+      background: #f0f4fa;
+    }
+    #save-gemini-key {
+      background: linear-gradient(90deg, #4f8cff 0%, #6f6fff 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      margin-bottom: 2px;
+      box-shadow: 0 1px 4px rgba(79,140,255,0.08);
+      transition: background 0.2s;
+    }
+    #save-gemini-key:hover {
+      background: linear-gradient(90deg, #6f6fff 0%, #4f8cff 100%);
+    }
+    #save-status {
+      display: none;
+      margin: 8px auto 0 auto;
+      color: #2ecc40;
+      font-size: 1rem;
+      text-align: center;
+      font-weight: 500;
+      animation: fadeIn 0.3s;
+      align-items: center;
+      gap: 6px;
+    }
+    #checkmark {
+      font-size: 1.2em;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    .gen-link {
+      font-size: 0.98rem;
+      color: #888;
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 0;
+    }
+    .gen-link a {
+      color: #4f8cff;
+      text-decoration: underline;
+      transition: color 0.18s;
+    }
+    .gen-link a:hover {
+      color: #6f6fff;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Enter API key</h2>
+    <p class="subtitle">Enter your Gemini API key below.</p>
+    <div class="input-row">
+      <input type="password" id="gemini-api-key" placeholder="gemini-..." autocomplete="off" />
+      <button id="toggle-key-visibility" title="Show/Hide API key" tabindex="-1">👁️</button>
+    </div>
+    <button id="save-gemini-key">Continue</button>
+    <div id="save-status"><span id="checkmark">✔️</span> Saved!</div>
+    <p class="gen-link">You can <a href="https://aistudio.google.com/app/apikey" target="_blank">generate an API key here</a>.</p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
