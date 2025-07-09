@@ -148,22 +148,32 @@
     });
   }
 
-  // Helper to call backend and replace text, now with Gemini API key
+  // Helper to call Gemini API directly from the browser
+  async function callGemini(prompt, apiKey) {
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const body = {
+      contents: [{ parts: [{ text: prompt }] }]
+    };
+    const res = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  }
+
+  // Helper to call Gemini and replace text for each action
   async function handleActionReplace(action, text, target) {
-    let url = '';
-    let body = {};
+    let prompt = '';
     if (action === 'grammar') {
-      url = 'http://localhost:3000/grammar';
-      body = { text };
+      prompt = `Correct the grammar of this sentence. Only return the corrected version:\n"${text}"`;
     } else if (action === 'simplify') {
-      url = 'http://localhost:3000/simplify';
-      body = { text };
+      prompt = `Simplify the following text so it's easier to understand:\n"${text}"`;
     } else if (action === 'ask') {
-      url = 'http://localhost:3000/ask';
-      body = { prompt: text };
+      prompt = text;
     } else if (action === 'professional') {
-      url = 'http://localhost:3000/professional';
-      body = { text };
+      prompt = `Rewrite the following text in a professional tone. Only return the revised version:\n"${text}"`;
     }
     showMenuLoading();
     try {
@@ -173,20 +183,12 @@
         removeMenu();
         return;
       }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-gemini-api-key': apiKey
-        },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (data.result) {
-        replaceSelectedText(target, data.result);
+      const result = await callGemini(prompt, apiKey);
+      if (result) {
+        replaceSelectedText(target, result);
         removeMenu();
       } else {
-        showModal('Error: ' + (data.error || 'Unknown error'));
+        showModal('Error: No result from Gemini API.');
         removeMenu();
       }
     } catch (err) {
@@ -431,17 +433,13 @@
           suggestionBox.innerHTML = '<div style="color:#b00;text-align:center">Gemini API key not set. Please set it in the extension popup.</div>';
           return;
         }
-        const res = await fetch('http://localhost:3000/ask', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-gemini-api-key': apiKey },
-          body: JSON.stringify({ prompt: `${query}\n\nText: ${selectedText}` })
-        });
-        const data = await res.json();
-        if (data.result) {
+        const prompt = `${query}\n\nText: ${selectedText}`;
+        const result = await callGemini(prompt, apiKey);
+        if (result) {
           suggestionBox.innerHTML = '';
           // Show the result in a styled box
           const resultDiv = document.createElement('div');
-          resultDiv.textContent = data.result;
+          resultDiv.textContent = result;
           resultDiv.style.background = 'linear-gradient(90deg, #f8ffae 0%, #43c6ac 100%)';
           resultDiv.style.color = '#222';
           resultDiv.style.borderRadius = '999px';
@@ -471,21 +469,18 @@
             if (!insertTarget || !document.body.contains(insertTarget)) {
               insertTarget = lastTarget;
             }
-            // If still not focusable, try to find a textarea/input in the modal's opener
             if (!insertTarget || !(insertTarget.tagName === 'INPUT' || insertTarget.tagName === 'TEXTAREA' || insertTarget.isContentEditable)) {
-              // fallback: do nothing
               overlay.remove();
               return;
             }
-            // Focus the target before replacing text (for textarea/input)
             if (insertTarget.focus) insertTarget.focus();
-            replaceSelectedText(insertTarget, data.result);
+            replaceSelectedText(insertTarget, result);
             ev.stopPropagation();
             overlay.remove();
           };
           suggestionBox.appendChild(applyBtn);
         } else {
-          suggestionBox.innerHTML = '<div style="color:#b00;text-align:center">' + (data.error || 'No suggestions found.') + '</div>';
+          suggestionBox.innerHTML = '<div style="color:#b00;text-align:center">No suggestions found.</div>';
         }
       } catch (err) {
         suggestionBox.innerHTML = '<div style="color:#b00;text-align:center">Network or extension error: ' + (err && err.message ? err.message : err) + '</div>';
@@ -555,16 +550,12 @@
           removeMenu();
           return;
         }
-        const res = await fetch('http://localhost:3000/summary', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-gemini-api-key': apiKey },
-          body: JSON.stringify({ text: selectedText })
-        });
-        const data = await res.json();
-        if (data.result) {
-          showModal(data.result);
+        const prompt = `Summarize the whole text in proper manner and a key points should not be missed out and the summary should be in a paragraph:\n"${selectedText}"`;
+        const result = await callGemini(prompt, apiKey);
+        if (result) {
+          showModal(result);
         } else {
-          showModal('Error: ' + (data.error || 'Unknown error'));
+          showModal('Error: No result from Gemini API.');
         }
       } catch (err) {
         showModal('Network or extension error: ' + (err && err.message ? err.message : err));
