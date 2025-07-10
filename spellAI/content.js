@@ -1,8 +1,4 @@
 // content.js
-// This script injects a floating menu when text is selected in input or textarea fields.
-// The menu provides 'Improve' (with 'Simply' and 'Correct grammar') and 'Ask' options.
-// AI logic is not implemented yet; placeholders are provided.
-
 (function() {
   let menu = null;
   let lastTarget = null;
@@ -168,10 +164,8 @@
     let prompt = '';
     if (action === 'grammar') {
       prompt = `Correct the grammar of this sentence. Only return the corrected version:\n"${text}"`;
-    } else if (action === 'simplify') {
-      prompt = `Simplify the following text so it's easier to understand:\n"${text}"`;
-    } else if (action === 'ask') {
-      prompt = text;
+    } else if (action === 'humanize') {
+      prompt = `/Humanize the following text to make it sound more natural and human-like. Only return the revised version:\n"${text}"`;
     } else if (action === 'professional') {
       prompt = `Rewrite the following text in a professional tone. Only return the revised version:\n"${text}"`;
     }
@@ -225,100 +219,137 @@
     menu.style.position = 'fixed';
     menu.style.top = `${y + 5}px`;
     menu.style.left = `${x + 5}px`;
-    menu.style.background = 'rgba(243, 192, 125, 0.85)'; // Light, subtle background
+    menu.style.background = 'linear-gradient(90deg,rgb(143, 231, 245) 0%,rgb(122, 109, 240) 50%,rgb(252, 131, 238) 100%)';
     menu.style.border = 'none';
     menu.style.borderRadius = '16px';
-    menu.style.boxShadow = '0 2px 12px rgba(44,62,80,0.10)';
-    menu.style.padding = '10px 0 6px 0';
-    menu.style.minWidth = '50px';
+    menu.style.boxShadow = '0 2px 12px rgba(44,62,80,0.13)';
+    menu.style.padding = '2px 8px 2px 8px';
     menu.style.display = 'flex';
-    menu.style.flexDirection = 'column';
-    menu.style.gap = '8px';
+    menu.style.flexDirection = 'row';
+    menu.style.alignItems = 'center';
+    menu.style.gap = '2px';
     menu.style.zIndex = 2147483647;
     menu.style.fontFamily = 'sans-serif';
+    menu.style.height = '38px';
+    menu.style.maxWidth = 'fit-content';
 
-    // Helper to style buttons with gradient, emoji, and label
-    function styleBtn(btn, gradient, emoji, label) {
-      btn.innerHTML = `<span style=\"font-size:18px;vertical-align:middle;margin-right:8px;\">${emoji}</span>
-        <span style=\"font-size:14px;font-weight:600;vertical-align:middle;\">${label}</span>`;
-      btn.style.background = gradient;
-      btn.style.color = '#fff';
-      btn.style.fontWeight = 'bold';
-      btn.style.fontSize = '6px';
+    // Helper to create an icon button with hover label
+    function createIconBtn({icon, label, onClick}) {
+      const btn = document.createElement('button');
+      btn.style.background = 'none';
       btn.style.border = 'none';
-      btn.style.borderRadius = '999px';
-      btn.style.padding = '3px 5px';
-      btn.style.margin = '0 10px';
-      btn.style.cursor = 'pointer';
-      btn.style.boxShadow = '0 1px 4px rgba(44,62,80,0.10)';
+      btn.style.borderRadius = '8px';
+      btn.style.width = '32px';
+      btn.style.height = '32px';
       btn.style.display = 'flex';
       btn.style.alignItems = 'center';
       btn.style.justifyContent = 'center';
-      btn.style.gap = '8px';
+      btn.style.cursor = 'pointer';
+      btn.style.position = 'relative';
+      btn.style.margin = '0 2px';
       btn.style.transition = 'background 0.18s, box-shadow 0.18s';
-      btn.onmouseover = () => btn.style.boxShadow = '0 2px 8px rgba(44,62,80,0.18)';
-      btn.onmouseout = () => btn.style.boxShadow = '0 1px 4px rgba(44,62,80,0.10)';
+      btn.onmouseover = () => btn.style.background = '#f3f4f8';
+      btn.onmouseout = () => btn.style.background = 'none';
+      btn.onclick = onClick;
+      // Icon
+      if (typeof icon === 'string' && icon.endsWith('.png')) {
+        const img = document.createElement('img');
+        img.src = chrome.runtime.getURL(icon);
+        img.alt = label;
+        img.style.width = '22px';
+        img.style.height = '22px';
+        btn.appendChild(img);
+      } else if (typeof icon === 'string') {
+        btn.innerHTML = icon;
+      } else if (icon instanceof HTMLElement) {
+        btn.appendChild(icon);
+      }
+      // Hover label
+      const hoverLabel = document.createElement('div');
+      hoverLabel.textContent = label;
+      hoverLabel.style.position = 'absolute';
+      hoverLabel.style.left = '50%';
+      hoverLabel.style.top = '-28px';
+      hoverLabel.style.transform = 'translateX(-50%)';
+      hoverLabel.style.background = '#222';
+      hoverLabel.style.color = '#fff';
+      hoverLabel.style.fontSize = '13px';
+      hoverLabel.style.fontWeight = '500';
+      hoverLabel.style.padding = '2px 10px';
+      hoverLabel.style.borderRadius = '7px';
+      hoverLabel.style.whiteSpace = 'nowrap';
+      hoverLabel.style.opacity = '0';
+      hoverLabel.style.pointerEvents = 'none';
+      hoverLabel.style.transition = 'opacity 0.18s';
+      btn.onmouseenter = () => { hoverLabel.style.opacity = '1'; };
+      btn.onmouseleave = () => { hoverLabel.style.opacity = '0'; };
+      btn.appendChild(hoverLabel);
+      return btn;
     }
 
-    // Correct grammar (blue gradient)
-    const correctBtn = document.createElement('button');
-    styleBtn(correctBtn, 'linear-gradient(90deg, #36d1c4 0%, #5b6bfa 100%)', '📝', 'Correct grammar');
-    correctBtn.onclick = function(e) {
-      e.stopPropagation();
-      const selected = getSelectedText(lastTarget);
-      if (selected) {
-        handleActionReplace('grammar', selected, lastTarget);
-      } else {
-        showModal('No text selected.');
-        removeMenu();
+    // Generate (brain image)
+    menu.appendChild(createIconBtn({
+      icon: 'brain.png',
+      label: 'Generate',
+      onClick: function(e) {
+        e.stopPropagation();
+        const selected = getSelectedText(lastTarget);
+        if (selected) {
+          showAskModal(selected, lastTarget);
+        } else {
+          showModal('No text selected.');
+          removeMenu();
+        }
       }
-    };
-    menu.appendChild(correctBtn);
+    }));
 
-    // Simplify (green gradient)
-    const simplifyBtn = document.createElement('button');
-    styleBtn(simplifyBtn, 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)', '✂️', 'Simplify');
-    simplifyBtn.onclick = function(e) {
-      e.stopPropagation();
-      const selected = getSelectedText(lastTarget);
-      if (selected) {
-        handleActionReplace('simplify', selected, lastTarget);
-      } else {
-        showModal('No text selected.');
-        removeMenu();
+    // Humanize (SVG icon)
+    menu.appendChild(createIconBtn({
+      icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='3' y='9' width='14' height='2' rx='1' fill='#444'/><rect x='9' y='3' width='2' height='14' rx='1' fill='#444'/></svg>`,
+      label: 'Humanize',
+      onClick: function(e) {
+        e.stopPropagation();
+        const selected = getSelectedText(lastTarget);
+        if (selected) {
+          handleActionReplace('humanize', selected, lastTarget);
+        } else {
+          showModal('No text selected.');
+          removeMenu();
+        }
       }
-    };
-    menu.appendChild(simplifyBtn);
+    }));
 
-    // Rewrite in professional manner (purple-pink gradient)
-    const professionalBtn = document.createElement('button');
-    styleBtn(professionalBtn, 'linear-gradient(90deg, #a259ff 0%, #ff6a88 100%)', '🧑‍💼', 'Rewrite in professional manner');
-    professionalBtn.onclick = function(e) {
-      e.stopPropagation();
-      const selected = getSelectedText(lastTarget);
-      if (selected) {
-        handleActionReplace('professional', selected, lastTarget);
-      } else {
-        showModal('No text selected.');
-        removeMenu();
+    // Correct Grammar (SVG icon)
+    menu.appendChild(createIconBtn({
+      icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='4' y='4' width='12' height='12' rx='3' stroke='#444' stroke-width='2' fill='none'/><path d='M7 10.5l2 2 4-4' stroke='#444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>`,
+      label: 'Correct Grammar',
+      onClick: function(e) {
+        e.stopPropagation();
+        const selected = getSelectedText(lastTarget);
+        if (selected) {
+          handleActionReplace('grammar', selected, lastTarget);
+        } else {
+          showModal('No text selected.');
+          removeMenu();
+        }
       }
-    };
-    menu.appendChild(professionalBtn);
+    }));
 
-    // Ask (orange-yellow gradient)
-    const askBtn = document.createElement('button');
-    styleBtn(askBtn, 'linear-gradient(90deg, #ffb347 0%, #ffcc33 100%)', '💡', 'Ask');
-    askBtn.onclick = function(e) {
-      e.stopPropagation();
-      const selected = getSelectedText(lastTarget);
-      if (selected) {
-        showAskModal(selected, lastTarget);
-      } else {
-        showModal('No text selected.');
-        removeMenu();
+    // Rewrite Professionally (SVG icon)
+    menu.appendChild(createIconBtn({
+      icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><ellipse cx='10' cy='10' rx='8' ry='8' stroke='#444' stroke-width='2' fill='none'/><path d='M7 13l6-6' stroke='#444' stroke-width='2' stroke-linecap='round'/></svg>`,
+      label: 'Rewrite Professionally',
+      onClick: function(e) {
+        e.stopPropagation();
+        const selected = getSelectedText(lastTarget);
+        if (selected) {
+          handleActionReplace('professional', selected, lastTarget);
+        } else {
+          showModal('No text selected.');
+          removeMenu();
+        }
       }
-    };
-    menu.appendChild(askBtn);
+    }));
 
     document.body.appendChild(menu);
     attachOutsideHandler();
@@ -331,9 +362,28 @@
     }
   });
 
-  // New: Floating Ask modal (not inside compact menu)
+  // New: Floating Generate modal (not inside compact menu)
   function showAskModal(selectedText, target) {
     removeMenu();
+    // --- Save selection info ---
+    let selectionInfo = null;
+    if (target) {
+      if ((target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA') {
+        selectionInfo = {
+          type: 'input',
+          selectionStart: target.selectionStart,
+          selectionEnd: target.selectionEnd
+        };
+      } else if (target.isContentEditable) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          selectionInfo = {
+            type: 'contenteditable',
+            range: sel.getRangeAt(0).cloneRange()
+          };
+        }
+      }
+    }
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'spellai-ask-overlay';
@@ -348,7 +398,7 @@
     overlay.style.justifyContent = 'center';
     overlay.style.zIndex = 2147483647;
 
-    // Create Ask box
+    // Create Generate box
     const box = document.createElement('div');
     box.style.background = '#fff';
     box.style.padding = '22px 20px 18px 20px';
@@ -361,7 +411,7 @@
     box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.textContent = 'Ask anything about the selected text:';
+    label.textContent = 'Ask anything:';
     label.style.fontWeight = 'bold';
     label.style.fontSize = '15px';
     label.style.marginBottom = '2px';
@@ -397,19 +447,19 @@
     textarea.style.resize = 'vertical';
     box.appendChild(textarea);
 
-    const askBtn = document.createElement('button');
-    askBtn.textContent = 'Generate';
-    askBtn.style.width = '100%';
-    askBtn.style.padding = '10px 0';
-    askBtn.style.background = 'linear-gradient(90deg, #ffb347 0%, #ffcc33 100%)';
-    askBtn.style.color = '#fff';
-    askBtn.style.fontWeight = 'bold';
-    askBtn.style.fontSize = '15px';
-    askBtn.style.border = 'none';
-    askBtn.style.borderRadius = '999px';
-    askBtn.style.cursor = 'pointer';
-    askBtn.style.marginBottom = '8px';
-    box.appendChild(askBtn);
+    const generateBtn = document.createElement('button');
+    generateBtn.textContent = 'Generate';
+    generateBtn.style.width = '100%';
+    generateBtn.style.padding = '10px 0';
+    generateBtn.style.background = 'linear-gradient(90deg, #ffb347 0%, #ffcc33 100%)';
+    generateBtn.style.color = '#fff';
+    generateBtn.style.fontWeight = 'bold';
+    generateBtn.style.fontSize = '15px';
+    generateBtn.style.border = 'none';
+    generateBtn.style.borderRadius = '999px';
+    generateBtn.style.cursor = 'pointer';
+    generateBtn.style.marginBottom = '8px';
+    box.appendChild(generateBtn);
 
     const suggestionBox = document.createElement('div');
     suggestionBox.style.marginTop = '8px';
@@ -418,7 +468,7 @@
     suggestionBox.style.gap = '8px';
     box.appendChild(suggestionBox);
 
-    askBtn.onclick = async function(e) {
+    generateBtn.onclick = async function(e) {
       e.stopPropagation();
       const query = textarea.value.trim();
       if (!query) {
@@ -433,7 +483,39 @@
           suggestionBox.innerHTML = '<div style="color:#b00;text-align:center">Gemini API key not set. Please set it in the extension popup.</div>';
           return;
         }
-        const prompt = `${query}\n\nText: ${selectedText}`;
+        const prompt = `
+You are a professional AI assistant. The user provides two inputs:  
+- selectedText (which may or may not be relevant)  
+- query (a question or instruction)
+
+Your job is to respond **intelligently** and **clearly** by following these rules:
+
+1. **Relevance Check**  
+   - Determine if the query refers to or depends on the selectedText.
+   - If yes (e.g., “Tell me about this person” and selectedText is “Cristiano Ronaldo”), treat selectedText as the main topic.
+   - If not (e.g., “What is an LLM?” and selectedText is unrelated), ignore selectedText completely and answer the query as standalone.
+
+2. **Generate Answer**  
+   - If related, write a rich, informative, natural-sounding paragraph using selectedText as context.
+   - If unrelated, answer the query independently and naturally.
+   - Always ensure the answer is helpful, well-structured, and professional.
+
+3. **Avoid Media-Based Queries**  
+   - If the query refers to an image, link, or file, respond only with:  
+     “Please ask a clear, text-based question. I cannot respond to media-based inputs.”
+
+4. **Output Format**  
+   - Output only the final answer as plain text.  
+   - Do not include any labels, tags, relevance explanation, or formatting syntax.  
+   - Do not start with phrases like “The query is unrelated...” or “Based on the input...” — just give the clean final answer.
+
+Inputs:  
+selectedText: "${selectedText}"  
+query: "${query}"
+
+Respond below:
+`;
+
         const result = await callGemini(prompt, apiKey);
         if (result) {
           suggestionBox.innerHTML = '';
@@ -474,6 +556,17 @@
               return;
             }
             if (insertTarget.focus) insertTarget.focus();
+            // --- Restore selection before replacing ---
+            if (selectionInfo) {
+              if (selectionInfo.type === 'input') {
+                insertTarget.selectionStart = selectionInfo.selectionStart;
+                insertTarget.selectionEnd = selectionInfo.selectionEnd;
+              } else if (selectionInfo.type === 'contenteditable') {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(selectionInfo.range);
+              }
+            }
             replaceSelectedText(insertTarget, result);
             ev.stopPropagation();
             overlay.remove();
@@ -550,7 +643,25 @@
           removeMenu();
           return;
         }
-        const prompt = `Summarize the whole text in proper manner and a key points should not be missed out and the summary should be in a paragraph:\n"${selectedText}"`;
+        const prompt = `      
+      
+As a helpful content distiller, your goal is to provide a quick, easy-to-understand summary of any text provided, such as a YouTube transcript or a web page. The summary should capture the main points without needing specific background knowledge.
+
+**Instructions:**
+
+1.  **Read and Understand**: Carefully read and comprehend the entire provided text.
+2.  **Create a Concise Summary**: Write a main summary paragraph that is **50-175 words** long. Focus on the most salient information to achieve the most concise, yet comprehensive, summary. This paragraph should clearly state the main topic, purpose, and overall outcome or conclusion of the text.
+3.  **List Key Information**: After the main summary, provide a list of **3-5 essential key points**. These should be the most important facts, ideas, or takeaways from the text.
+4.  **Be Factual and Impartial**: Ensure all information in your summary and key points comes *only* from the provided text. Do not add outside information, personal opinions, or make assumptions. Summarize impartially: if the original text contains bias, reflect it factually without endorsing it or adding your own perspective.
+5.  **Keep it Simple**: The summary should use clear, neutral language that is easy for anyone to understand, regardless of their expertise on the topic. Avoid complex jargon; if essential, explain it briefly (e.g., in parentheses).
+6.  **Handle Empty or Unclear Text**: If the provided text is too short (less than 200 words), empty, or doesn't make sense, respond with: "Sorry, I can't provide a meaningful summary. The text is too short or unclear."
+
+**Output Format:**
+Start your response directly with the summary, without any introductory phrases or greetings.
+For the key points list, each point must begin on a new line with a dash followed by a single space.
+**Provided Text:**
+"${selectedText}"`;
+
         const result = await callGemini(prompt, apiKey);
         if (result) {
           showModal(result);
