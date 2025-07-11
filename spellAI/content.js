@@ -3,6 +3,62 @@
   let menu = null;
   let lastTarget = null;
 
+  // Encryption utilities using Web Crypto API
+  const ENCRYPTION_SALT = 'spellAI_salt_v1'; // Salt for key derivation
+
+  // Generate encryption key from password using PBKDF2
+  async function deriveKey(password, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(password),
+      'PBKDF2',
+      false,
+      ['deriveBits', 'deriveKey']
+    );
+    
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: enc.encode(salt),
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  // Decrypt text using AES-GCM
+  async function decryptText(encryptedData, password) {
+    try {
+      const key = await deriveKey(password, ENCRYPTION_SALT);
+      const dec = new TextDecoder();
+      
+      // Decode from base64
+      const combined = new Uint8Array(
+        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+      );
+      
+      // Extract IV and encrypted data
+      const iv = combined.slice(0, 12);
+      const encrypted = combined.slice(12);
+      
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        encrypted
+      );
+      
+      return dec.decode(decrypted);
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      throw error;
+    }
+  }
+
   // Helper to remove the menu
   function removeMenu() {
     if (menu) {
@@ -128,14 +184,29 @@
   }
 
   // Helper to get Gemini API key from chrome.storage.sync (returns a Promise)
-  function getGeminiApiKey() {
+  async function getGeminiApiKey() {
     return new Promise((resolve, reject) => {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-        chrome.storage.sync.get(['geminiApiKey'], (result) => {
+        chrome.storage.sync.get(['geminiApiKey'], async (result) => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
           } else {
-            resolve(result.geminiApiKey || null);
+            const storedKey = result.geminiApiKey || null;
+            if (!storedKey) {
+              resolve(null);
+              return;
+            }
+            
+            try {
+              // Try to decrypt the stored key
+              const decryptedKey = await decryptText(storedKey, 'spellAI_master_key');
+              resolve(decryptedKey);
+            } catch (error) {
+              // If decryption fails, it might be an old unencrypted key
+              // Return it as-is for backward compatibility
+              console.warn('Failed to decrypt API key, using as-is:', error);
+              resolve(storedKey);
+            }
           }
         });
       } else {
@@ -165,8 +236,56 @@
     if (action === 'grammar') {
       prompt = `Correct the grammar of this sentence. Only return the corrected version:\n"${text}"`;
     } else if (action === 'humanize') {
-      prompt = `/Humanize the following text to make it sound more natural and human-like. Only return the revised version:\n"${text}"`;
-    } else if (action === 'professional') {
+      prompt = `You are an expert human copywriter specializing in natural language transformation and authentic communication. Your primary goal is to rewrite the provided text to sound as if it was originally written by a thoughtful, articulate, and truly human individual.
+
+[INTERNAL MONOLOGUE:
+1.  **Analyze & Identify:** Carefully read the original text. Pinpoint specific "AI patterns," robotic phrasing, overly formal tones, generic language, or awkward structures that signal it wasn't written by a human. For each, ask: "Why does this sound artificial or impersonal?"
+2.  **Strategize Transformation:** Brainstorm how a human would naturally express the same idea. Consider:
+    *   Varying sentence structure and length for rhythm.
+    *   Using more evocative, precise, or common vocabulary.
+    *   Injecting appropriate emotional nuance, tone, or personality.
+    *   Improving conversational flow, readability, and engagement.
+    *   Ensuring conciseness where possible without sacrificing clarity or impact.
+3.  **Self-Assess (Post-Rewrite):** Review your rewritten text. Does it genuinely sound like a human wrote it? Are all traces of AI-generated style eliminated? Is the original meaning perfectly preserved?
+]
+
+**Instructions for Rewriting:**
+
+*   **Persona:** Adopt the voice of a skilled, empathetic, and natural human writer.
+*   **Core Goal:** Transform the text to be natural, fluid, and authentically human.
+*   **Avoid at all costs:**
+    *   Robotic phrasing, stiff language, or overly academic jargon.
+    *   Generic AI-style patterns, predictable structures, or buzzwords used for their own sake.
+    *   Repetitive sentence openings or predictable vocabulary.
+    *   Any meta-commentary, introductory phrases (e.g., "Here's the rewritten text," "Okay, here's that information"), or concluding remarks. Provide *only* the transformed text.
+    *   **Absolutely NO Markdown formatting or special characters whatsoever.** This means no asterisks, hyphens, numbers with periods for lists, emojis, bolding, italics, code blocks, tables, or any character used to create a visual structure or emphasis beyond standard punctuation (e.g., periods, commas, question marks). All "headings" and "bullet points" from the original text must be integrated into natural, flowing, plain text paragraphs. The output *must be* pure, unformatted text.
+*   **Preserve Absolutely:**
+    *   The *entire original meaning* and all factual accuracy. Do not invent new facts, add external information, or alter core messages.
+    *   The clarity and precision of the original content.
+*   **Enhance Continuously:**
+    *   Emotional nuance and an appropriate, consistent tone.
+    *   Conversational flow, readability, and natural rhythm.
+    *   Engagement and a sense of genuine human voice.
+    *   Conciseness, but only if it improves clarity or impact without removing essential information.
+    *   **Logical paragraphing:** Ensure distinct, well-separated paragraphs for each new major idea or sub-section. The paragraph breaks should clearly delineate different topics, serving the function of visual separation that would otherwise be provided by headings or lists, but entirely in plain text.
+*   **Handle Edge Cases:**
+    *   **Already Human-like:** If the original text is already highly human-like, make only minimal, subtle adjustments to refine flow or clarity, rather than drastic, unnecessary changes.
+    *   **Technical/Data-driven Content:** If the content is inherently technical, scientific, or data-driven, focus on making the *surrounding language* as natural and accessible as possible, without compromising technical accuracy.
+
+**Examples of Desired Transformation:**
+
+*   **Example 1:**
+    *   **Original (Generic AI/Robotic):** "The platform facilitates user engagement by providing a comprehensive suite of tools for content creation and dissemination."
+    *   **Rewritten (Human):** "This platform really helps people connect and share their ideas by giving them all the tools they need to create and spread content easily."
+
+*   **Example 2:**
+    *   **Original (Overly Formal/Stiff):** "It is imperative that all participants adhere to the established guidelines to ensure optimal operational efficiency."
+    *   **Rewritten (Human):** "Everyone needs to stick to the rules so things run smoothly and efficiently."
+
+Please provide only the humanized version of the following text, based on the principles above: "${text}"`;} 
+    
+
+    else if (action === 'professional') {
       prompt = `Rewrite the following text in a professional tone. Only return the revised version:\n"${text}"`;
     }
     showMenuLoading();
@@ -614,14 +733,10 @@ Respond below:
     menu.style.zIndex = 2147483647;
     menu.style.fontFamily = 'sans-serif';
 
+    // --- Updated summary button: emoji only, with tooltip ---
     const summaryBtn = document.createElement('button');
-    summaryBtn.innerHTML = `
-      <span style="display:inline-flex;align-items:center;gap:8px;">
-        <span style="font-size:18px;">✨🧙‍♂️</span>
-        <span style="font-size:16px;font-weight:500;">Summary</span>
-      </span>
-    `;
-    summaryBtn.style.padding = '7px 18px';
+    summaryBtn.innerHTML = `<span style="font-size:18px;">✨🧙‍♂️</span>`;
+    summaryBtn.style.padding = '7px 12px';
     summaryBtn.style.background = 'linear-gradient(90deg, #36d1c4 0%, #5b6bfa 100%)';
     summaryBtn.style.color = '#fff';
     summaryBtn.style.fontWeight = 'bold';
@@ -631,8 +746,29 @@ Respond below:
     summaryBtn.style.cursor = 'pointer';
     summaryBtn.style.boxShadow = '0 2px 8px rgba(44, 62, 80, 0.10)';
     summaryBtn.style.transition = 'background 0.2s, box-shadow 0.2s';
+    summaryBtn.style.position = 'relative';
     summaryBtn.onmouseover = () => summaryBtn.style.boxShadow = '0 4px 16px rgba(44, 62, 80, 0.18)';
     summaryBtn.onmouseout = () => summaryBtn.style.boxShadow = '0 2px 8px rgba(44, 62, 80, 0.10)';
+    // Tooltip
+    const tooltip = document.createElement('div');
+    tooltip.textContent = 'Summary';
+    tooltip.style.position = 'absolute';
+    tooltip.style.left = '50%';
+    tooltip.style.top = '-32px';
+    tooltip.style.transform = 'translateX(-50%)';
+    tooltip.style.background = '#222';
+    tooltip.style.color = '#fff';
+    tooltip.style.fontSize = '13px';
+    tooltip.style.fontWeight = '500';
+    tooltip.style.padding = '2px 10px';
+    tooltip.style.borderRadius = '7px';
+    tooltip.style.whiteSpace = 'nowrap';
+    tooltip.style.opacity = '0';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.transition = 'opacity 0.18s';
+    summaryBtn.onmouseenter = () => { tooltip.style.opacity = '1'; summaryBtn.style.boxShadow = '0 4px 16px rgba(44, 62, 80, 0.18)'; };
+    summaryBtn.onmouseleave = () => { tooltip.style.opacity = '0'; summaryBtn.style.boxShadow = '0 2px 8px rgba(44, 62, 80, 0.10)'; };
+    summaryBtn.appendChild(tooltip);
     summaryBtn.onclick = async function(e) {
       e.stopPropagation();
       showMenuLoading();
