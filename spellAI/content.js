@@ -61,6 +61,7 @@
 
   // Helper to remove the menu
   function removeMenu() {
+    console.log('steps [removeMenu] removing popup menu');
     if (menu) {
       menu.remove();
       menu = null;
@@ -92,6 +93,24 @@
 
   // Helper to get selected text from input, textarea, or contenteditable
   function getSelectedText(target) {
+    // Shadow DOM/iframe awareness log
+    if (target) {
+      let node = target;
+      let shadow = false;
+      while (node) {
+        if (node.toString && node.toString().includes('ShadowRoot')) {
+          shadow = true;
+          break;
+        }
+        node = node.parentNode;
+      }
+      if (shadow) {
+        console.log('steps [context] Selection is inside a Shadow DOM');
+      }
+      if (window.frameElement) {
+        console.log('steps [context] Selection is inside an iframe');
+      }
+    }
     if ((target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA') {
       return target.value.substring(target.selectionStart, target.selectionEnd);
     } else if (target.isContentEditable) {
@@ -230,73 +249,109 @@
     return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
   }
 
+  // === Spinner at Cursor Position ===
+  let spellaiSpinner = null;
+  window.spellaiIsProcessing = false;
+  function showCursorSpinner(target) {
+    removeCursorSpinner();
+    let coords = null;
+    // Input/Textarea
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+      // Create a hidden mirror div to calculate caret position
+      const rect = target.getBoundingClientRect();
+      const style = window.getComputedStyle(target);
+      const mirror = document.createElement('div');
+      mirror.style.position = 'absolute';
+      mirror.style.visibility = 'hidden';
+      mirror.style.whiteSpace = 'pre-wrap';
+      mirror.style.wordWrap = 'break-word';
+      mirror.style.font = style.font;
+      mirror.style.fontSize = style.fontSize;
+      mirror.style.fontFamily = style.fontFamily;
+      mirror.style.fontWeight = style.fontWeight;
+      mirror.style.letterSpacing = style.letterSpacing;
+      mirror.style.padding = style.padding;
+      mirror.style.border = style.border;
+      mirror.style.boxSizing = style.boxSizing;
+      mirror.style.width = style.width;
+      mirror.style.height = style.height;
+      mirror.style.lineHeight = style.lineHeight;
+      mirror.style.background = 'transparent';
+      mirror.style.left = '-9999px';
+      mirror.style.top = '0';
+      // Set mirror text up to caret
+      const value = target.value;
+      const start = target.selectionStart;
+      const before = value.substring(0, start);
+      const after = value.substring(start);
+      // Replace spaces and newlines for accurate rendering
+      mirror.textContent = before;
+      document.body.appendChild(mirror);
+      // Create a span for caret
+      const caretSpan = document.createElement('span');
+      caretSpan.textContent = after.length === 0 ? '\u200b' : after[0];
+      mirror.appendChild(caretSpan);
+      const caretRect = caretSpan.getBoundingClientRect();
+      const mirrorRect = mirror.getBoundingClientRect();
+      coords = {
+        x: rect.left + (caretRect.left - mirrorRect.left),
+        y: rect.top + (caretRect.top - mirrorRect.top) + parseInt(style.fontSize || '16'),
+      };
+      document.body.removeChild(mirror);
+    } else {
+      // Contenteditable or general selection
+      const selRect = getSelectionCoords();
+      if (selRect) {
+        coords = { x: selRect.left, y: selRect.bottom };
+      }
+    }
+    if (!coords) return;
+    spellaiSpinner = document.createElement('div');
+    spellaiSpinner.id = 'spellai-cursor-spinner';
+    spellaiSpinner.style.position = 'fixed';
+    spellaiSpinner.style.left = `${coords.x - 16}px`;
+    spellaiSpinner.style.top = `${coords.y + 2}px`;
+    spellaiSpinner.style.zIndex = '2147483647';
+    spellaiSpinner.style.pointerEvents = 'none';
+    spellaiSpinner.innerHTML = `<svg width="32" height="32" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#0074D9" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>`;
+    document.body.appendChild(spellaiSpinner);
+  }
+  function removeCursorSpinner() {
+    if (spellaiSpinner) {
+      spellaiSpinner.remove();
+      spellaiSpinner = null;
+    }
+  }
+
   // Helper to call Gemini and replace text for each action
   async function handleActionReplace(action, text, target) {
     let prompt = '';
     if (action === 'grammar') {
       prompt = `Correct the grammar of this sentence. Only return the corrected version:\n"${text}"`;
     } else if (action === 'humanize') {
-      prompt = `You are an expert human copywriter specializing in natural language transformation and authentic communication. Your primary goal is to rewrite the provided text to sound as if it was originally written by a thoughtful, articulate, and truly human individual.
-
-[INTERNAL MONOLOGUE:
-1.  **Analyze & Identify:** Carefully read the original text. Pinpoint specific "AI patterns," robotic phrasing, overly formal tones, generic language, or awkward structures that signal it wasn't written by a human. For each, ask: "Why does this sound artificial or impersonal?"
-2.  **Strategize Transformation:** Brainstorm how a human would naturally express the same idea. Consider:
-    *   Varying sentence structure and length for rhythm.
-    *   Using more evocative, precise, or common vocabulary.
-    *   Injecting appropriate emotional nuance, tone, or personality.
-    *   Improving conversational flow, readability, and engagement.
-    *   Ensuring conciseness where possible without sacrificing clarity or impact.
-3.  **Self-Assess (Post-Rewrite):** Review your rewritten text. Does it genuinely sound like a human wrote it? Are all traces of AI-generated style eliminated? Is the original meaning perfectly preserved?
-]
-
-**Instructions for Rewriting:**
-
-*   **Persona:** Adopt the voice of a skilled, empathetic, and natural human writer.
-*   **Core Goal:** Transform the text to be natural, fluid, and authentically human.
-*   **Avoid at all costs:**
-    *   Robotic phrasing, stiff language, or overly academic jargon.
-    *   Generic AI-style patterns, predictable structures, or buzzwords used for their own sake.
-    *   Repetitive sentence openings or predictable vocabulary.
-    *   Any meta-commentary, introductory phrases (e.g., "Here's the rewritten text," "Okay, here's that information"), or concluding remarks. Provide *only* the transformed text.
-    *   **Absolutely NO Markdown formatting or special characters whatsoever.** This means no asterisks, hyphens, numbers with periods for lists, emojis, bolding, italics, code blocks, tables, or any character used to create a visual structure or emphasis beyond standard punctuation (e.g., periods, commas, question marks). All "headings" and "bullet points" from the original text must be integrated into natural, flowing, plain text paragraphs. The output *must be* pure, unformatted text.
-*   **Preserve Absolutely:**
-    *   The *entire original meaning* and all factual accuracy. Do not invent new facts, add external information, or alter core messages.
-    *   The clarity and precision of the original content.
-*   **Enhance Continuously:**
-    *   Emotional nuance and an appropriate, consistent tone.
-    *   Conversational flow, readability, and natural rhythm.
-    *   Engagement and a sense of genuine human voice.
-    *   Conciseness, but only if it improves clarity or impact without removing essential information.
-    *   **Logical paragraphing:** Ensure distinct, well-separated paragraphs for each new major idea or sub-section. The paragraph breaks should clearly delineate different topics, serving the function of visual separation that would otherwise be provided by headings or lists, but entirely in plain text.
-*   **Handle Edge Cases:**
-    *   **Already Human-like:** If the original text is already highly human-like, make only minimal, subtle adjustments to refine flow or clarity, rather than drastic, unnecessary changes.
-    *   **Technical/Data-driven Content:** If the content is inherently technical, scientific, or data-driven, focus on making the *surrounding language* as natural and accessible as possible, without compromising technical accuracy.
-
-**Examples of Desired Transformation:**
-
-*   **Example 1:**
-    *   **Original (Generic AI/Robotic):** "The platform facilitates user engagement by providing a comprehensive suite of tools for content creation and dissemination."
-    *   **Rewritten (Human):** "This platform really helps people connect and share their ideas by giving them all the tools they need to create and spread content easily."
-
-*   **Example 2:**
-    *   **Original (Overly Formal/Stiff):** "It is imperative that all participants adhere to the established guidelines to ensure optimal operational efficiency."
-    *   **Rewritten (Human):** "Everyone needs to stick to the rules so things run smoothly and efficiently."
-
-Please provide only the humanized version of the following text, based on the principles above: "${text}"`;} 
+      prompt = `You are an expert human copywriter specializing in natural language transformation and authentic communication. Your primary goal is to rewrite the provided text to sound as if it was originally written by a thoughtful, articulate, and truly human individual.\n\n[INTERNAL MONOLOGUE:\n1.  **Analyze & Identify:** Carefully read the original text. Pinpoint specific "AI patterns," robotic phrasing, overly formal tones, generic language, or awkward structures that signal it wasn't written by a human. For each, ask: "Why does this sound artificial or impersonal?"\n2.  **Strategize Transformation:** Brainstorm how a human would naturally express the same idea. Consider:\n    *   Varying sentence structure and length for rhythm.\n    *   Using more evocative, precise, or common vocabulary.\n    *   Injecting appropriate emotional nuance, tone, or personality.\n    *   Improving conversational flow, readability, and engagement.\n    *   Ensuring conciseness where possible without sacrificing clarity or impact.\n3.  **Self-Assess (Post-Rewrite):** Review your rewritten text. Does it genuinely sound like a human wrote it? Are all traces of AI-generated style eliminated? Is the original meaning perfectly preserved?\n]\n\n**Instructions for Rewriting:**\n\n*   **Persona:** Adopt the voice of a skilled, empathetic, and natural human writer.\n*   **Core Goal:** Transform the text to be natural, fluid, and authentically human.\n*   **Avoid at all costs:**\n    *   Robotic phrasing, stiff language, or overly academic jargon.\n    *   Generic AI-style patterns, predictable structures, or buzzwords used for their own sake.\n    *   Repetitive sentence openings or predictable vocabulary.\n    *   Any meta-commentary, introductory phrases (e.g., "Here's the rewritten text," "Okay, here's that information"), or concluding remarks. Provide *only* the transformed text.\n    *   **Absolutely NO Markdown formatting or special characters whatsoever.** This means no asterisks, hyphens, numbers with periods for lists, emojis, bolding, italics, code blocks, tables, or any character used to create a visual structure or emphasis beyond standard punctuation (e.g., periods, commas, question marks). All "headings" and "bullet points" from the original text must be integrated into natural, flowing, plain text paragraphs. The output *must be* pure, unformatted text.\n*   **Preserve Absolutely:**\n    *   The *entire original meaning* and all factual accuracy. Do not invent new facts, add external information, or alter core messages.\n    *   The clarity and precision of the original content.\n*   **Enhance Continuously:**\n    *   Emotional nuance and an appropriate, consistent tone.\n    *   Conversational flow, readability, and natural rhythm.\n    *   Engagement and a sense of genuine human voice.\n    *   Conciseness, but only if it improves clarity or impact without removing essential information.\n    *   **Logical paragraphing:** Ensure distinct, well-separated paragraphs for each new major idea or sub-section. The paragraph breaks should clearly delineate different topics, serving the function of visual separation that would otherwise be provided by headings or lists, but entirely in plain text.\n*   **Handle Edge Cases:**\n    *   **Already Human-like:** If the original text is already highly human-like, make only minimal, subtle adjustments to refine flow or clarity, rather than drastic, unnecessary changes.\n    *   **Technical/Data-driven Content:** If the content is inherently technical, scientific, or data-driven, focus on making the *surrounding language* as natural and accessible as possible, without compromising technical accuracy.\n\n**Examples of Desired Transformation:**\n\n*   **Example 1:**\n    *   **Original (Generic AI/Robotic):** "The platform facilitates user engagement by providing a comprehensive suite of tools for content creation and dissemination."\n    *   **Rewritten (Human):** "This platform really helps people connect and share their ideas by giving them all the tools they need to create and spread content easily."\n\n*   **Example 2:**\n    *   **Original (Overly Formal/Stiff):** "It is imperative that all participants adhere to the established guidelines to ensure optimal operational efficiency."\n    *   **Rewritten (Human):** "Everyone needs to stick to the rules so things run smoothly and efficiently."\n\nPlease provide only the humanized version of the following text, based on the principles above: "${text}"`;
+    }
     
 
     else if (action === 'professional') {
       prompt = `Rewrite the following text in a professional tone. Only return the revised version:\n"${text}"`;
     }
+    window.spellaiIsProcessing = true;
+    removeMenu(); // Hide menu immediately
     showMenuLoading();
+    showCursorSpinner(target);
     try {
       const apiKey = await getGeminiApiKey();
       if (!apiKey) {
         showModal('Gemini API key not set. Please set it in the extension popup.');
         removeMenu();
+        removeCursorSpinner();
+        window.spellaiIsProcessing = false;
         return;
       }
+      console.log('steps [Gemini call] About to call Gemini API for action:', action);
       const result = await callGemini(prompt, apiKey);
+      console.log('steps [Gemini call] Gemini API response:', result);
       if (result) {
         replaceSelectedText(target, result);
         removeMenu();
@@ -308,6 +363,8 @@ Please provide only the humanized version of the following text, based on the pr
       showModal('Network or extension error: ' + (err && err.message ? err.message : err));
       removeMenu();
     }
+    removeCursorSpinner();
+    window.spellaiIsProcessing = false;
   }
 
   // Helper to manage outside click handler
@@ -332,6 +389,7 @@ Please provide only the humanized version of the following text, based on the pr
 
   // Helper to create the floating menu
   function createMenu(x, y) {
+    console.log('steps [createMenu] creating popup menu at', { x, y });
     removeMenu();
     menu = document.createElement('div');
     menu.id = 'spellai-menu';
@@ -369,7 +427,12 @@ Please provide only the humanized version of the following text, based on the pr
       btn.style.transition = 'background 0.18s, box-shadow 0.18s';
       btn.onmouseover = () => btn.style.background = '#f3f4f8';
       btn.onmouseout = () => btn.style.background = 'none';
-      btn.onclick = onClick;
+      // Use mousedown instead of click for robust event handling in Gmail and elsewhere
+      btn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick(e);
+      });
       // Icon
       if (typeof icon === 'string' && icon.endsWith('.png')) {
         const img = document.createElement('img');
@@ -411,6 +474,7 @@ Please provide only the humanized version of the following text, based on the pr
       icon: 'brain.png',
       label: 'Generate',
       onClick: function(e) {
+        console.log('steps [button click] Generate');
         e.stopPropagation();
         const selected = getSelectedText(lastTarget);
         if (selected) {
@@ -427,6 +491,7 @@ Please provide only the humanized version of the following text, based on the pr
       icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='3' y='9' width='14' height='2' rx='1' fill='#444'/><rect x='9' y='3' width='2' height='14' rx='1' fill='#444'/></svg>`,
       label: 'Humanize',
       onClick: function(e) {
+        console.log('steps [button click] Humanize');
         e.stopPropagation();
         const selected = getSelectedText(lastTarget);
         if (selected) {
@@ -443,6 +508,7 @@ Please provide only the humanized version of the following text, based on the pr
       icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='4' y='4' width='12' height='12' rx='3' stroke='#444' stroke-width='2' fill='none'/><path d='M7 10.5l2 2 4-4' stroke='#444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>`,
       label: 'Correct Grammar',
       onClick: function(e) {
+        console.log('steps [button click] Correct Grammar');
         e.stopPropagation();
         const selected = getSelectedText(lastTarget);
         if (selected) {
@@ -459,6 +525,7 @@ Please provide only the humanized version of the following text, based on the pr
       icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><ellipse cx='10' cy='10' rx='8' ry='8' stroke='#444' stroke-width='2' fill='none'/><path d='M7 13l6-6' stroke='#444' stroke-width='2' stroke-linecap='round'/></svg>`,
       label: 'Rewrite Professionally',
       onClick: function(e) {
+        console.log('steps [button click] Rewrite Professionally');
         e.stopPropagation();
         const selected = getSelectedText(lastTarget);
         if (selected) {
@@ -471,6 +538,18 @@ Please provide only the humanized version of the following text, based on the pr
     }));
 
     document.body.appendChild(menu);
+    // --- Fix menu position to stay in viewport ---
+    const rect = menu.getBoundingClientRect();
+    let newLeft = x + 5;
+    let newTop = y + 5;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (newLeft + rect.width > vw - 8) newLeft = vw - rect.width - 8;
+    if (newLeft < 8) newLeft = 8;
+    if (newTop + rect.height > vh - 8) newTop = vh - rect.height - 8;
+    if (newTop < 8) newTop = 8;
+    menu.style.left = `${newLeft}px`;
+    menu.style.top = `${newTop}px`;
     attachOutsideHandler();
   }
 
@@ -625,6 +704,8 @@ Your job is to respond **intelligently** and **clearly** by following these rule
 
 4. **Output Format**  
    - Output only the final answer as plain text.  
+   - Never ever include any markdown, code blocks, or special formatting. (If you do you wil lose your job)
+   - You can use - and * for bullet points, but do not use any other formatting like bold, italics, or headings.
    - Do not include any labels, tags, relevance explanation, or formatting syntax.  
    - Do not start with phrases like “The query is unrelated...” or “Based on the input...” — just give the clean final answer.
 
@@ -716,6 +797,7 @@ Respond below:
 
   // Helper to show summary menu for general page selection
   function showSummaryMenu(x, y, selectedText) {
+    console.log('steps [showSummaryMenu] creating summary menu at', { x, y }, 'selectedText:', selectedText);
     removeMenu();
     menu = document.createElement('div');
     menu.id = 'spellai-menu';
@@ -771,12 +853,17 @@ Respond below:
     summaryBtn.appendChild(tooltip);
     summaryBtn.onclick = async function(e) {
       e.stopPropagation();
+      window.spellaiIsProcessing = true;
+      removeMenu(); // Hide menu immediately
       showMenuLoading();
+      showCursorSpinner(); // No target, so use selection
       try {
         const apiKey = await getGeminiApiKey();
         if (!apiKey) {
           showModal('Gemini API key not set. Please set it in the extension popup.');
           removeMenu();
+          removeCursorSpinner();
+          window.spellaiIsProcessing = false;
           return;
         }
         const prompt = `      
@@ -808,9 +895,23 @@ For the key points list, each point must begin on a new line with a dash followe
         showModal('Network or extension error: ' + (err && err.message ? err.message : err));
       }
       removeMenu();
+      removeCursorSpinner();
+      window.spellaiIsProcessing = false;
     };
     menu.appendChild(summaryBtn);
     document.body.appendChild(menu);
+    // --- Fix summary menu position to stay in viewport ---
+    const rect = menu.getBoundingClientRect();
+    let newLeft = x + 5;
+    let newTop = y + 5;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (newLeft + rect.width > vw - 8) newLeft = vw - rect.width - 8;
+    if (newLeft < 8) newLeft = 8;
+    if (newTop + rect.height > vh - 8) newTop = vh - rect.height - 8;
+    if (newTop < 8) newTop = 8;
+    menu.style.left = `${newLeft}px`;
+    menu.style.top = `${newTop}px`;
     attachOutsideHandler();
   }
 
@@ -823,74 +924,98 @@ For the key points list, each point must begin on a new line with a dash followe
 
   // Listen for selection in input/textarea/contenteditable (mouse or keyboard)
   function showMenuIfSelection(e) {
-    const target = e.target;
-    // Prevent menu if selection is inside the Ask modal
-    const askOverlay = document.getElementById('spellai-ask-overlay');
-    if (askOverlay && askOverlay.contains(target)) {
+    console.log('steps [showMenuIfSelection] event triggered', e);
+    if (window.spellaiIsProcessing) {
       removeMenu();
       return;
     }
-    const isInput = (target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA';
-    const isEditable = target.isContentEditable;
+    const target = e && e.target;
+    // Prevent menu if selection is inside the Ask modal
+    const askOverlay = document.getElementById('spellai-ask-overlay');
+    if (askOverlay && askOverlay.contains(target)) {
+      console.log('steps [askOverlay] selection inside Ask modal, removing menu');
+      removeMenu();
+      return;
+    }
+    const isInput = (target && target.tagName === 'INPUT' && target.type === 'text') || (target && target.tagName === 'TEXTAREA');
+    const isEditable = target && target.isContentEditable;
     setTimeout(() => {
       let showMenu = false;
       let coords = null;
       if (isInput) {
+        console.log('steps [input/textarea] detected', { selectionStart: target.selectionStart, selectionEnd: target.selectionEnd });
         const selectionStart = target.selectionStart;
         const selectionEnd = target.selectionEnd;
         if (selectionStart !== selectionEnd) {
           const rect = target.getBoundingClientRect();
           coords = { x: rect.right, y: rect.top };
           showMenu = true;
+          console.log('steps [input/textarea] valid selection, coords:', coords);
+        } else {
+          console.log('steps [input/textarea] no selection, menu will be removed');
         }
       } else if (isEditable) {
+        console.log('steps [contenteditable] detected');
         const sel = window.getSelection();
         if (sel && sel.rangeCount > 0 && !sel.isCollapsed && target.contains(sel.anchorNode)) {
           const rect = getSelectionCoords();
           if (rect) {
             coords = { x: rect.left, y: rect.bottom };
             showMenu = true;
+            console.log('steps [contenteditable] valid selection, coords:', coords);
+          } else {
+            console.log('steps [contenteditable] no valid rect, menu will be removed');
           }
+        } else {
+          console.log('steps [contenteditable] no selection, menu will be removed');
         }
       } else {
-        // Not input/textarea/contenteditable: check for general selection
+        console.log('steps [general selection] detected');
         const sel = window.getSelection();
         if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-          const selectedText = sel.toString();
-          if (selectedText.trim().length > 0) {
-            // Check if selection is inside an input/textarea/contenteditable
-            let node = sel.anchorNode;
-            let insideField = false;
-            while (node) {
-              if (node.nodeType === 1) {
-                const tag = node.tagName;
-                if ((tag === 'INPUT' && node.type === 'text') || tag === 'TEXTAREA' || node.isContentEditable) {
-                  insideField = true;
-                  break;
-                }
-              }
-              node = node.parentNode;
-            }
-            if (!insideField) {
-              const rect = sel.getRangeAt(0).getBoundingClientRect();
-              if (rect && rect.width > 0 && rect.height > 0) {
-                showSummaryMenu(rect.left, rect.bottom, selectedText);
-                return;
+          let node = sel.anchorNode;
+          let insideField = false;
+          while (node) {
+            if (node.nodeType === 1) {
+              const tag = node.tagName;
+              if ((tag === 'INPUT' && node.type === 'text') || tag === 'TEXTAREA' || node.isContentEditable) {
+                insideField = true;
+                break;
               }
             }
+            node = node.parentNode;
           }
+          const rect = sel.getRangeAt(0).getBoundingClientRect();
+          if (rect && rect.width > 0 && rect.height > 0) {
+            if (!insideField) {
+              console.log('steps [showSummaryMenu] called, coords:', { x: rect.left, y: rect.bottom }, 'selectedText:', sel.toString());
+              showSummaryMenu(rect.left, rect.bottom, sel.toString());
+              return;
+            }
+            console.log('steps [createMenu] called for field, coords:', { x: rect.left, y: rect.bottom });
+            createMenu(rect.left, rect.bottom);
+            lastTarget = document.activeElement;
+            return;
+          } else {
+            console.log('steps [general selection] no valid rect, menu will be removed');
+          }
+        } else {
+          console.log('steps [general selection] no selection, menu will be removed');
         }
       }
       if (showMenu && coords) {
+        console.log('steps [createMenu] called, coords:', coords);
         createMenu(coords.x, coords.y);
         lastTarget = target;
       } else {
+        console.log('steps [removeMenu] called, no valid selection or coords');
         removeMenu();
       }
     }, 0);
   }
   document.addEventListener('mouseup', showMenuIfSelection);
   document.addEventListener('keyup', showMenuIfSelection);
+  document.addEventListener('selectionchange', showMenuIfSelection);
 
   // Hide menu if input loses focus or selection is cleared
   document.addEventListener('selectionchange', function() {
