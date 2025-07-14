@@ -533,6 +533,7 @@
 
   // Helper to call Gemini and replace text for each action
   async function handleActionReplace(action, text, target) {
+    console.log('[spellai] handleActionReplace called:', {action, text, target}); // Debug log
     let prompt = '';
     if (action === 'grammar') {
       prompt = `Correct the grammar of this sentence. Only return the corrected version:\n"${text}"`;
@@ -551,15 +552,16 @@
     try {
       const apiKey = await getGeminiApiKey();
       if (!apiKey) {
+        console.error('[spellai] Gemini API key missing!'); // Debug log
         showModal('Gemini API key not set. Please set it in the extension popup.');
         removeMenu();
         removeCursorSpinner();
         window.spellaiIsProcessing = false;
         return;
       }
-      console.log('steps [Gemini call] About to call Gemini API for action:', action);
+      console.log('[spellai] About to call Gemini API for action:', action);
       const result = await callGemini(prompt, apiKey);
-      console.log('steps [Gemini call] Gemini API response:', result);
+      console.log('[spellai] Gemini API response:', result);
       if (result) {
         replaceSelectedText(target, result);
         removeMenu();
@@ -568,6 +570,7 @@
         removeMenu();
       }
     } catch (err) {
+      console.error('[spellai] Gemini API/network error:', err); // Debug log
       showModal('Network or extension error: ' + (err && err.message ? err.message : err));
       removeMenu();
     }
@@ -615,7 +618,9 @@
     menu.style.gap = '2px';
     menu.style.zIndex = 2147483647;
     menu.style.fontFamily = 'sans-serif';
-    menu.style.height = '38px';
+    menu.style.height = '28px'; // Reduced height
+    menu.style.padding = '1px 4px 1px 4px'; // Less padding
+    menu.style.gap = '1px'; // Less gap
     menu.style.maxWidth = 'fit-content';
 
     // Helper to create an icon button with hover label
@@ -623,21 +628,22 @@
       const btn = document.createElement('button');
       btn.style.background = 'none';
       btn.style.border = 'none';
-      btn.style.borderRadius = '8px';
-      btn.style.width = '32px';
-      btn.style.height = '32px';
+      btn.style.borderRadius = '6px'; // Slightly smaller
+      btn.style.width = '24px'; // Smaller button
+      btn.style.height = '24px';
       btn.style.display = 'flex';
       btn.style.alignItems = 'center';
       btn.style.justifyContent = 'center';
       btn.style.cursor = 'pointer';
       btn.style.position = 'relative';
-      btn.style.margin = '0 2px';
+      btn.style.margin = '0 1px';
       btn.style.transition = 'background 0.18s, box-shadow 0.18s';
       btn.onmouseover = () => btn.style.background = '#f3f4f8';
       btn.onmouseout = () => btn.style.background = 'none';
       btn.addEventListener('mousedown', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log('[spellai] IconBtn clicked:', label); // Debug log
         onClick(e);
       });
       // Icon
@@ -645,8 +651,8 @@
         const img = document.createElement('img');
         img.src = chrome.runtime.getURL(icon);
         img.alt = label;
-        img.style.width = '22px';
-        img.style.height = '22px';
+        img.style.width = '16px'; // Smaller icon
+        img.style.height = '16px';
         btn.appendChild(img);
       } else if (typeof icon === 'string') {
         btn.innerHTML = icon;
@@ -658,14 +664,14 @@
       hoverLabel.textContent = label;
       hoverLabel.style.position = 'absolute';
       hoverLabel.style.left = '50%';
-      hoverLabel.style.top = '-28px';
+      hoverLabel.style.top = '-22px'; // Move up for smaller btn
       hoverLabel.style.transform = 'translateX(-50%)';
       hoverLabel.style.background = '#222';
       hoverLabel.style.color = '#fff';
-      hoverLabel.style.fontSize = '13px';
+      hoverLabel.style.fontSize = '11px'; // Smaller font
       hoverLabel.style.fontWeight = '500';
-      hoverLabel.style.padding = '2px 10px';
-      hoverLabel.style.borderRadius = '7px';
+      hoverLabel.style.padding = '1px 7px';
+      hoverLabel.style.borderRadius = '5px';
       hoverLabel.style.whiteSpace = 'nowrap';
       hoverLabel.style.opacity = '0';
       hoverLabel.style.pointerEvents = 'none';
@@ -697,6 +703,7 @@
     // --- Rewrite (expands dropdown below) ---
     let rewriteDropdown = null;
     let selectedTone = 'grammar'; // Default
+    let ignoreNextDropdownClose = false; // Flag to prevent dropdown from closing after tone select
     const tones = [
       { key: 'grammar', label: 'Grammar', icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='4' y='4' width='12' height='12' rx='3' stroke='#444' stroke-width='2' fill='none'/><path d='M7 10.5l2 2 4-4' stroke='#444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>` },
       { key: 'professional', label: 'Professional', icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><ellipse cx='10' cy='10' rx='8' ry='8' stroke='#444' stroke-width='2' fill='none'/><path d='M7 13l6-6' stroke='#444' stroke-width='2' stroke-linecap='round'/></svg>` },
@@ -710,19 +717,19 @@
       rewriteDropdown = document.createElement('div');
       rewriteDropdown.id = 'spellai-rewrite-dropdown';
       rewriteDropdown.style.position = 'absolute';
-      rewriteDropdown.style.top = '44px';
+      rewriteDropdown.style.top = '30px'; // Move up for smaller bar
       rewriteDropdown.style.left = '0';
       rewriteDropdown.style.background = '#fff';
-      rewriteDropdown.style.borderRadius = '12px';
-      rewriteDropdown.style.boxShadow = '0 4px 16px rgba(44,62,80,0.13)';
-      rewriteDropdown.style.padding = '14px 18px 10px 18px';
+      rewriteDropdown.style.borderRadius = '10px';
+      rewriteDropdown.style.boxShadow = '0 2px 8px rgba(44,62,80,0.13)';
+      rewriteDropdown.style.padding = '8px 10px 6px 10px'; // Less padding
       rewriteDropdown.style.display = 'flex';
       rewriteDropdown.style.flexDirection = 'column';
-      rewriteDropdown.style.gap = '10px';
+      rewriteDropdown.style.gap = '6px'; // Less gap
       rewriteDropdown.style.zIndex = 2147483648;
-      rewriteDropdown.style.minWidth = '220px';
+      rewriteDropdown.style.minWidth = '140px'; // Smaller min width
       rewriteDropdown.style.fontFamily = 'inherit';
-      rewriteDropdown.style.fontSize = '15px';
+      rewriteDropdown.style.fontSize = '13px'; // Smaller font
       rewriteDropdown.style.alignItems = 'stretch';
       rewriteDropdown.style.border = '1px solid #e0e6ef';
       // Tone option buttons
@@ -732,21 +739,25 @@
         toneBtn.className = 'spellai-tone-btn';
         toneBtn.style.display = 'flex';
         toneBtn.style.alignItems = 'center';
-        toneBtn.style.gap = '8px';
-        toneBtn.style.padding = '7px 10px';
-        toneBtn.style.border = '1.5px solid #e0e6ef';
-        toneBtn.style.borderRadius = '7px';
+        toneBtn.style.gap = '5px';
+        toneBtn.style.padding = '4px 6px';
+        toneBtn.style.border = '1px solid #e0e6ef';
+        toneBtn.style.borderRadius = '5px';
         toneBtn.style.background = selectedTone === tone.key ? '#eaf7f5' : '#fff';
         toneBtn.style.color = '#222';
         toneBtn.style.cursor = 'pointer';
         toneBtn.style.fontWeight = selectedTone === tone.key ? 'bold' : 'normal';
+        toneBtn.style.fontSize = '12px';
         toneBtn.style.transition = 'background 0.18s, border 0.18s';
         toneBtn.innerHTML = `${tone.icon}<span>${tone.label}</span>`;
         if (selectedTone === tone.key) {
           toneBtn.style.borderColor = '#46C2AF';
         }
-        toneBtn.addEventListener('click', function(ev) {
+        // Use pointerdown to prevent dropdown from closing
+        toneBtn.addEventListener('pointerdown', function(ev) {
+          ev.preventDefault();
           ev.stopPropagation();
+          ignoreNextDropdownClose = true; // Set flag to ignore next pointerdown outside
           selectedTone = tone.key;
           // Deselect all tone buttons only
           Array.from(rewriteDropdown.querySelectorAll('.spellai-tone-btn')).forEach(btn => {
@@ -763,20 +774,24 @@
       // Confirm button
       const confirmBtn = document.createElement('button');
       confirmBtn.textContent = 'Rewrite';
-      confirmBtn.style.marginTop = '10px';
-      confirmBtn.style.padding = '10px 0';
+      confirmBtn.style.marginTop = '6px';
+      confirmBtn.style.padding = '6px 0';
       confirmBtn.style.width = '100%';
       confirmBtn.style.background = 'linear-gradient(90deg, #36d1c4 0%, #5b6bfa 100%)';
       confirmBtn.style.color = '#fff';
       confirmBtn.style.fontWeight = 'bold';
-      confirmBtn.style.fontSize = '15px';
+      confirmBtn.style.fontSize = '12px';
       confirmBtn.style.border = 'none';
-      confirmBtn.style.borderRadius = '8px';
+      confirmBtn.style.borderRadius = '6px';
       confirmBtn.style.cursor = 'pointer';
       confirmBtn.onclick = function(ev) {
         ev.stopPropagation();
+        console.log('[spellai] Rewrite confirm clicked. Tone:', selectedTone); // Debug log
         const selected = getSelectedText(lastTarget);
         if (selected) {
+          if (rewriteDropdown && rewriteDropdown.parentNode) rewriteDropdown.parentNode.removeChild(rewriteDropdown); // Close dropdown after action
+          document.removeEventListener('pointerdown', closeDropdownOnOutside, true);
+          rewriteDropdown = null;
           handleActionReplace(selectedTone, selected, lastTarget);
         } else {
           showModal('No text selected.');
@@ -787,19 +802,27 @@
       // Position dropdown below rewriteBtn
       rewriteBtn.style.position = 'relative';
       menu.appendChild(rewriteDropdown);
-
       // --- Close dropdown on outside click ---
       function closeDropdownOnOutside(e) {
-        // Only close if click is outside the dropdown and not a tone button
-        if (!rewriteDropdown.contains(e.target) && e.target !== rewriteBtn) {
+        // If just selected a tone, ignore this pointerdown and do not close
+        if (ignoreNextDropdownClose) {
+          ignoreNextDropdownClose = false;
+          return;
+        }
+        // Only close if click is outside the dropdown and not a tone button or the rewrite button
+        if (
+          !rewriteDropdown.contains(e.target) &&
+          e.target !== rewriteBtn &&
+          e.target !== confirmBtn
+        ) {
           if (rewriteDropdown.parentNode) rewriteDropdown.parentNode.removeChild(rewriteDropdown);
-          document.removeEventListener('click', closeDropdownOnOutside, true);
+          document.removeEventListener('pointerdown', closeDropdownOnOutside, true);
           rewriteDropdown = null;
         }
       }
       // Attach with a slight delay so button click can process first
       setTimeout(() => {
-        document.addEventListener('click', closeDropdownOnOutside, true);
+        document.addEventListener('pointerdown', closeDropdownOnOutside, true);
       }, 0);
     }
     const rewriteBtn = createIconBtn({
