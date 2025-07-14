@@ -90,6 +90,92 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('save-status');
   const toggleBtn = document.getElementById('toggle-key-visibility');
 
+  // --- Mode toggle and shortcut settings ---
+  const modeToggle = document.getElementById('mode-toggle');
+  const shortcutSettings = document.getElementById('shortcut-settings');
+  const sliderKnob = document.getElementById('slider-knob');
+  const shortcutIds = {
+    generate: 'shortcut-generate',
+    grammar: 'shortcut-grammar',
+    humanize: 'shortcut-humanize',
+    professional: 'shortcut-professional',
+  };
+  const defaultShortcuts = {
+    generate: 'Ctrl+K',
+    grammar: 'Ctrl+G',
+    humanize: 'Ctrl+H',
+    professional: 'Ctrl+P',
+  };
+  let currentShortcuts = { ...defaultShortcuts };
+  let currentMode = 'popup'; // or 'shortcut'
+
+  // Helper: update shortcut table UI
+  function updateShortcutTable() {
+    for (const action in shortcutIds) {
+      document.getElementById(shortcutIds[action]).textContent = currentShortcuts[action] || defaultShortcuts[action];
+    }
+  }
+
+  // Helper: update toggle UI
+  function updateToggleUI() {
+    if (currentMode === 'shortcut') {
+      modeToggle.checked = true;
+      shortcutSettings.style.display = '';
+      sliderKnob.style.left = '18px';
+    } else {
+      modeToggle.checked = false;
+      shortcutSettings.style.display = 'none';
+      sliderKnob.style.left = '2px';
+    }
+  }
+
+  // Load mode and shortcuts from storage
+  chrome.storage.sync.get(['spellaiMode', 'spellaiShortcuts'], (result) => {
+    currentMode = result.spellaiMode || 'popup';
+    currentShortcuts = { ...defaultShortcuts, ...(result.spellaiShortcuts || {}) };
+    updateToggleUI();
+    updateShortcutTable();
+  });
+
+  // Toggle event
+  modeToggle.addEventListener('change', () => {
+    currentMode = modeToggle.checked ? 'shortcut' : 'popup';
+    updateToggleUI();
+    chrome.storage.sync.set({ spellaiMode: currentMode });
+  });
+
+  // Shortcut edit logic
+  document.querySelectorAll('.edit-shortcut').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const action = btn.getAttribute('data-action');
+      btn.textContent = 'Press keys...';
+      btn.disabled = true;
+      const onKeyDown = (ev) => {
+        ev.preventDefault();
+        let combo = '';
+        if (ev.ctrlKey) combo += 'Ctrl+';
+        if (ev.altKey) combo += 'Alt+';
+        if (ev.shiftKey) combo += 'Shift+';
+        if (ev.metaKey) combo += 'Meta+';
+        let key = ev.key.toUpperCase();
+        if (key.length === 1 || (key >= 'A' && key <= 'Z')) {
+          combo += key;
+        } else if (key.startsWith('ARROW')) {
+          combo += key.replace('ARROW', '');
+        } else {
+          combo += key;
+        }
+        currentShortcuts[action] = combo;
+        updateShortcutTable();
+        chrome.storage.sync.set({ spellaiShortcuts: currentShortcuts });
+        btn.textContent = 'Edit';
+        btn.disabled = false;
+        window.removeEventListener('keydown', onKeyDown, true);
+      };
+      window.addEventListener('keydown', onKeyDown, true);
+    });
+  });
+
   // Show/hide password toggle
   let isVisible = false;
   toggleBtn.addEventListener('click', () => {

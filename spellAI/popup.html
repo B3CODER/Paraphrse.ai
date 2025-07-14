@@ -185,10 +185,20 @@
     </style>
 </head>
 <body>
-    <div class="popup-container">
-        <div class="header">
-            <h1>Paraphrase AI</h1>
-            <p>Please enter your Gemini API key to activate the service.</p>
+    <div class="popup-container" style="position: relative;">
+        <div id="mode-toggle-bar" style="position: absolute; top: 24px; right: 32px; z-index: 2;">
+            <label class="switch" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span id="popup-mode-label" style="font-size: 13px; font-weight: 600;">Popup</span>
+                <input type="checkbox" id="mode-toggle" style="width: 0; height: 0; opacity: 0;">
+                <span class="slider" style="width: 36px; height: 20px; background: #e0e6ef; border-radius: 12px; position: relative; display: inline-block; transition: background 0.2s;">
+                    <span id="slider-knob" style="position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: left 0.2s;"></span>
+                </span>
+                <span id="shortcut-mode-label" style="font-size: 13px; font-weight: 600;">Shortcut</span>
+            </label>
+        </div>
+        <div class="header" style="margin-bottom: 35px;">
+            <h1 style="margin-bottom: 10px;">Paraphrase AI</h1>
+            <p style="margin-top: 0;">Please enter your Gemini API key to activate the service.</p>
         </div>
 
         <div class="input-container">
@@ -202,7 +212,44 @@
         </div>
         <button id="save-gemini-key">Activate Paraphrase AI</button>
         <p id="save-status"></p>
-        <a href="https://makersuite.google.com/app/apikey" target="_blank">Generate a Gemini API key here</a>
+        <a href="https://makersuite.google.com/app/apikey" target="_blank" style="margin-top: 30px;">Generate a Gemini API key here</a>
+        <div id="shortcut-settings" style="display: none; margin-top: 32px; text-align: left;">
+            <h3 style="margin-bottom: 10px; font-size: 18px; color: #0F1A29;">Shortcut Settings</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #e0e6ef;">
+                        <th style="text-align: left; padding: 6px 0;">Action</th>
+                        <th style="text-align: left; padding: 6px 0;">Shortcut Key</th>
+                        <th style="text-align: left; padding: 6px 0;">Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Generate</td>
+                        <td id="shortcut-generate">Ctrl + K</td>
+                        <td><button class="edit-shortcut" data-action="generate" style="padding: 4px 10px; border-radius: 6px; border: 1px solid #e0e6ef; background: #f7f8fa; cursor: pointer;">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td>Grammar</td>
+                        <td id="shortcut-grammar">Ctrl + G</td>
+                        <td><button class="edit-shortcut" data-action="grammar" style="padding: 4px 10px; border-radius: 6px; border: 1px solid #e0e6ef; background: #f7f8fa; cursor: pointer;">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td>Humanize</td>
+                        <td id="shortcut-humanize">Ctrl + H</td>
+                        <td><button class="edit-shortcut" data-action="humanize" style="padding: 4px 10px; border-radius: 6px; border: 1px solid #e0e6ef; background: #f7f8fa; cursor: pointer;">Edit</button></td>
+                    </tr>
+                    <tr>
+                        <td>Professional</td>
+                        <td id="shortcut-professional">Ctrl + P</td>
+                        <td><button class="edit-shortcut" data-action="professional" style="padding: 4px 10px; border-radius: 6px; border: 1px solid #e0e6ef; background: #f7f8fa; cursor: pointer;">Edit</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 12px; color: #555; font-size: 13px;">
+                <b>Instructions:</b> Select text and press the shortcut to trigger the action. You can customize shortcuts above.
+            </div>
+        </div>
     </div>
 </body>
 </html>

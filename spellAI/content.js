@@ -1261,9 +1261,100 @@ For the key points list, each point must begin on a new line with a dash followe
       }
     }, 0);
   }
-  document.addEventListener('mouseup', showMenuIfSelection);
-  document.addEventListener('keyup', showMenuIfSelection);
-  document.addEventListener('selectionchange', showMenuIfSelection);
+  // --- SpellAI Mode and Shortcuts State ---
+  let spellaiMode = 'popup';
+  let spellaiShortcuts = {
+    generate: 'Ctrl+K',
+    grammar: 'Ctrl+G',
+    humanize: 'Ctrl+H',
+    professional: 'Ctrl+P',
+  };
+  // Helper to normalize shortcut string
+  function normalizeShortcut(ev) {
+    let combo = '';
+    if (ev.ctrlKey) combo += 'Ctrl+';
+    if (ev.altKey) combo += 'Alt+';
+    if (ev.shiftKey) combo += 'Shift+';
+    if (ev.metaKey) combo += 'Meta+';
+    let key = ev.key.toUpperCase();
+    if (key.length === 1 || (key >= 'A' && key <= 'Z')) {
+      combo += key;
+    } else if (key.startsWith('ARROW')) {
+      combo += key.replace('ARROW', '');
+    } else {
+      combo += key;
+    }
+    return combo;
+  }
+  // Load mode and shortcuts from storage
+  function loadSpellaiSettings() {
+    chrome.storage && chrome.storage.sync.get(['spellaiMode', 'spellaiShortcuts'], (result) => {
+      spellaiMode = result.spellaiMode || 'popup';
+      spellaiShortcuts = {
+        generate: 'Ctrl+K',
+        grammar: 'Ctrl+G',
+        humanize: 'Ctrl+H',
+        professional: 'Ctrl+P',
+        ...(result.spellaiShortcuts || {})
+      };
+    });
+  }
+  loadSpellaiSettings();
+  // Listen for changes from popup
+  if (chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'sync' && (changes.spellaiMode || changes.spellaiShortcuts)) {
+        loadSpellaiSettings();
+      }
+    });
+  }
+  // --- Shortcut Mode Keydown Handler ---
+  document.addEventListener('keydown', async function(ev) {
+    if (window.spellaiIsProcessing) return;
+    if (spellaiMode !== 'shortcut') return;
+    // Check if focus is in an editable field
+    let target = document.activeElement;
+    if (!target) return;
+    const isInput = (target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA';
+    const isEditable = target.isContentEditable;
+    if (!isInput && !isEditable) return;
+    // Check if there is a selection
+    let selected = getSelectedText(target);
+    if (!selected || selected.trim() === '') return;
+    // Check which shortcut was pressed
+    const pressed = normalizeShortcut(ev);
+    let matched = null;
+    for (const action in spellaiShortcuts) {
+      if (spellaiShortcuts[action].replace(/\s+/g, '').toUpperCase() === pressed.replace(/\s+/g, '').toUpperCase()) {
+        matched = action;
+        break;
+      }
+    }
+    if (!matched) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (matched === 'generate') {
+      showAskModal(selected, target);
+    } else {
+      await handleActionReplace(matched, selected, target);
+    }
+  }, true);
+  // --- Suppress popup menu in shortcut mode ---
+  const origShowMenuIfSelection = showMenuIfSelection;
+  function showMenuIfSelectionPatched(e) {
+    if (spellaiMode === 'shortcut') {
+      removeMenu();
+      return;
+    }
+    origShowMenuIfSelection(e);
+  }
+  // Patch event listeners
+  document.removeEventListener('mouseup', showMenuIfSelection);
+  document.removeEventListener('keyup', showMenuIfSelection);
+  document.removeEventListener('selectionchange', showMenuIfSelection);
+  document.addEventListener('mouseup', showMenuIfSelectionPatched);
+  document.addEventListener('keyup', showMenuIfSelectionPatched);
+  document.addEventListener('selectionchange', showMenuIfSelectionPatched);
 
   // Hide menu if input loses focus or selection is cleared
   document.addEventListener('selectionchange', function() {
