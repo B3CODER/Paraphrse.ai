@@ -1,3 +1,4 @@
+
 // popup.js
 // Handles saving/loading Gemini API key with modern UI features and encryption
 
@@ -146,3 +147,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 }); 
+

@@ -1,144 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Change BG Color</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f7f7fa;
-      margin: 0;
-      padding: 0;
-      min-width: 320px;
-      min-height: 260px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(44,62,80,0.13);
-      padding: 32px 28px 22px 28px;
-      width: 100%;
-      max-width: 340px;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 12px;
-    }
-    h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin: 0 0 4px 0;
-      text-align: center;
-      color: #222;
-    }
-    .subtitle {
-      font-size: 1rem;
-      color: #555;
-      text-align: center;
-      margin: 0 0 10px 0;
-    }
-    .input-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    input[type="password"], input[type="text"] {
-      flex: 1;
-      padding: 10px 12px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
-      transition: border 0.2s;
-      background: #f9fafd;
-    }
-    input[type="password"]:focus, input[type="text"]:focus {
-      border: 1.5px solid #4f8cff;
-    }
-    #toggle-key-visibility {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      padding: 0 6px;
-      color: #888;
-      border-radius: 6px;
-      transition: background 0.15s;
-      height: 36px;
-    }
-    #toggle-key-visibility:hover {
-      background: #f0f4fa;
-    }
-    #save-gemini-key {
-      background: linear-gradient(90deg, #4f8cff 0%, #6f6fff 100%);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 8px;
-      margin-bottom: 2px;
-      box-shadow: 0 1px 4px rgba(79,140,255,0.08);
-      transition: background 0.2s;
-    }
-    #save-gemini-key:hover {
-      background: linear-gradient(90deg, #6f6fff 0%, #4f8cff 100%);
-    }
-    #save-status {
-      display: none;
-      margin: 8px auto 0 auto;
-      color: #2ecc40;
-      font-size: 1rem;
-      text-align: center;
-      font-weight: 500;
-      animation: fadeIn 0.3s;
-      align-items: center;
-      gap: 6px;
-    }
-    #checkmark {
-      font-size: 1.2em;
-      vertical-align: middle;
-      margin-right: 4px;
-    }
-    .gen-link {
-      font-size: 0.98rem;
-      color: #888;
-      text-align: center;
-      margin-top: 10px;
-      margin-bottom: 0;
-    }
-    .gen-link a {
-      color: #4f8cff;
-      text-decoration: underline;
-      transition: color 0.18s;
-    }
-    .gen-link a:hover {
-      color: #6f6fff;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Paraphrase AI - Gemini API Key</title>
+    <script src="popup.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Styles & Full-Bleed Gradient Background */
+        body {
+            /* Mist-blue → peach gradient for full-bleed background */
+            background: linear-gradient(to bottom right, #BFD9FF, #FAD4B3);
+            font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Center the popup vertically and horizontally */
+            box-sizing: border-box;
+        }
+
+        /* Popup Container - Main Frame */
+        .popup-container {
+            background: #FFFFFF; /* Pure white for the popup card background */
+            padding: 48px; /* Ample padding for plenty of negative space */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); /* Soft, subtle depth drop-shadow */
+            width: 480px; /* Fixed width for consistent sizing */
+            max-width: none; /* Remove max-width constraint */
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            animation: fadeInScale 0.4s ease-out forwards; /* Simple animation for appearance */
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Header Section - Product Name & Subtitle */
+        .header {
+            margin-bottom: 35px; /* Space after the header section */
+        }
+
+        .header h1 {
+            color: #0F1A29; /* Midnight navy for product name */
+            font-size: 44px; /* Large, impactful headline */
+            font-weight: 800; /* Extra-bold geometric sans */
+            margin: 0 0 10px 0; /* Tight leading */
+            letter-spacing: -0.8px;
+            line-height: 1.1;
+        }
+
+        .header p {
+            color: #0F1A29; /* Midnight navy for sub-copy */
+            font-size: 18px; /* Regular/medium sans */
+            font-weight: 500;
+            opacity: 0.85; /* Slightly muted for secondary text */
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Input Field Container */
+        .input-container {
+            position: relative;
+            margin-bottom: 30px; /* Space below the input field */
+        }
+
+        input {
+            width: 100%;
+            background: #E5E8EC; /* Cool gray for input background */
+            border: 1px solid #BFC4CA; /* Slightly darker cool gray for border */
+            color: #0F1A29; /* Midnight navy for input text */
+            padding: 16px 55px 16px 20px; /* Generous padding for comfortable input */
+            box-sizing: border-box;
+            border-radius: 12px; /* Rounded input fields */
+            font-size: 17px;
+            font-weight: 500;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08); /* Subtle inner shadow for depth */
+            transition: all 0.2s ease-in-out;
+        }
+
+        input::placeholder {
+            color: #BFC4CA; /* Lighter cool gray for placeholder */
+            opacity: 0.8;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #46C2AF; /* Soft teal accent for focus state */
+            box-shadow: 0 0 0 4px rgba(70, 194, 175, 0.35); /* Teal glow on focus */
+            background: #FFFFFF; /* White background on focus for clarity */
+        }
+
+        /* Toggle Key Visibility Button (Eye Icon) */
+        #toggle-key-visibility {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #0F1A29; /* Midnight navy for icon */
+            cursor: pointer;
+            font-size: 24px; /* Larger icon */
+            opacity: 0.6; /* Muted opacity */
+            transition: opacity 0.2s ease, color 0.2s ease;
+            display: flex; /* For better centering of SVG */
+            align-items: center;
+            justify-content: center;
+        }
+
+        #toggle-key-visibility:hover {
+            opacity: 1;
+            color: #46C2AF; /* Soft teal on hover */
+        }
+
+        /* Call to Action (CTA) Button */
+        button#save-gemini-key {
+            width: 100%;
+            background: #0F1A29; /* Midnight navy for primary CTA fill */
+            color: #FFFFFF; /* Pure white text for CTA */
+            border: none;
+            padding: 18px; /* More substantial button */
+            cursor: pointer;
+            border-radius: 12px; /* Rounded button */
+            font-weight: 700; /* Medium sans for button label */
+            font-size: 18px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase; /* All caps for CTA */
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 20px rgba(15, 26, 41, 0.3); /* Prominent shadow for depth */
+        }
+
+        button#save-gemini-key:hover {
+            background: #1A314B; /* Slightly darker navy on hover */
+            transform: translateY(-3px); /* Subtle lift effect */
+            box-shadow: 0 12px 25px rgba(15, 26, 41, 0.4);
+        }
+
+        button#save-gemini-key:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(15, 26, 41, 0.3);
+        }
+
+        /* Save Status Message */
+        #save-status {
+            color: #0F1A29; /* Midnight navy for status text */
+            margin-top: 25px;
+            font-size: 15px;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        #save-status.hidden {
+            opacity: 0;
+        }
+
+        #save-status span#checkmark {
+            color: #46C2AF; /* Soft teal for checkmark */
+            font-weight: bold;
+        }
+
+        /* Link to Generate API Key */
+        a {
+            color: #0F1A29; /* Midnight navy for link */
+            text-decoration: none;
+            display: block;
+            margin-top: 35px; /* Ample space from the button */
+            font-size: 15px;
+            opacity: 0.7; /* Muted for secondary link */
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            opacity: 1;
+            color: #46C2AF; /* Soft teal accent on link hover */
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Enter API key</h2>
-    <p class="subtitle">Enter your Gemini API key below.</p>
-    <div class="input-row">
-      <input type="password" id="gemini-api-key" placeholder="gemini-..." autocomplete="off" />
-      <button id="toggle-key-visibility" title="Show/Hide API key" tabindex="-1">👁️</button>
+    <div class="popup-container">
+        <div class="header">
+            <h1>Paraphrase AI</h1>
+            <p>Please enter your Gemini API key to activate the service.</p>
+        </div>
+
+        <div class="input-container">
+            <input type="password" id="gemini-api-key" placeholder="Your Gemini API Key">
+            <button id="toggle-key-visibility" aria-label="Toggle API key visibility">
+                <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </button>
+        </div>
+        <button id="save-gemini-key">Activate Paraphrase AI</button>
+        <p id="save-status"></p>
+        <a href="https://makersuite.google.com/app/apikey" target="_blank">Generate a Gemini API key here</a>
     </div>
-    <button id="save-gemini-key">Continue</button>
-    <div id="save-status"><span id="checkmark">✔️</span> Saved!</div>
-    <p class="gen-link">You can <a href="https://aistudio.google.com/app/apikey" target="_blank">generate an API key here</a>.</p>
-  </div>
-  <script src="popup.js"></script>
 </body>
-</html> 
+</html>
+
