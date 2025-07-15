@@ -337,7 +337,7 @@
     spinner.style.justifyContent = 'center';
     spinner.style.alignItems = 'center';
     spinner.style.height = '48px';
-    spinner.innerHTML = `<svg width="32" height="32" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#0074D9" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>`;
+    spinner.innerHTML = `<svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#0074D9" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>`;
     menu.appendChild(spinner);
   }
 
@@ -607,7 +607,7 @@
     menu.style.position = 'fixed';
     menu.style.top = `${y + 5}px`;
     menu.style.left = `${x + 5}px`;
-    menu.style.background = 'linear-gradient(90deg,rgb(143, 231, 245) 0%,rgb(122, 109, 240) 50%,rgb(252, 131, 238) 100%)';
+    menu.style.background = 'linear-gradient(90deg, #ffffff 0%, #8fe7f5 100%)';
     menu.style.border = 'none';
     menu.style.borderRadius = '16px';
     menu.style.boxShadow = '0 2px 12px rgba(44,62,80,0.13)';
@@ -826,7 +826,7 @@
       }, 0);
     }
     const rewriteBtn = createIconBtn({
-      icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><ellipse cx='10' cy='10' rx='8' ry='8' stroke='#444' stroke-width='2' fill='none'/><path d='M7 13l6-6' stroke='#444' stroke-width='2' stroke-linecap='round'/></svg>`,
+      icon: `<svg height="64px" width="64px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-27.92 -27.92 163.21 163.21" xml:space="preserve" fill="#000000" stroke="#000000" stroke-width="2.7916980000000002"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path style="fill:#010002;" d="M106.317,37.463c-1.406-1.403-3.672-1.403-5.071,0L70.013,68.692L26.104,88.029l-6.764-6.768 l19.344-43.905L69.909,6.123c1.403-1.399,1.403-3.668,0-5.071c-1.406-1.403-3.672-1.403-5.071,0L32.657,33.226L0.004,107.373 l74.136-32.657l32.177-32.181C107.72,41.139,107.72,38.863,106.317,37.463z"></path> <path style="fill:#010002;" d="M60.815,62.265c0.698,0.694,1.618,1.049,2.537,1.049c0.92,0,1.836-0.354,2.537-1.049l30.07-30.07 c1.406-1.406,1.406-3.675,0-5.075c-1.403-1.406-3.668-1.406-5.075,0l-30.07,30.07C59.416,58.589,59.416,60.862,60.815,62.265z"></path> <path style="fill:#010002;" d="M52.967,54.413c0.701,0.698,1.621,1.049,2.537,1.049c0.92,0,1.836-0.351,2.537-1.049l30.073-30.07 c1.403-1.406,1.403-3.675,0-5.075c-1.406-1.406-3.672-1.406-5.075,0l-30.073,30.07C51.564,50.737,51.564,53.014,52.967,54.413z"></path> <path style="fill:#010002;" d="M45.115,46.561c0.701,0.698,1.621,1.049,2.537,1.049c0.916,0,1.836-0.351,2.537-1.049l30.073-30.07 c1.403-1.406,1.403-3.675,0-5.075c-1.403-1.406-3.672-1.406-5.075,0l-30.073,30.07C43.716,42.885,43.716,45.162,45.115,46.561z"></path> </g> </g> </g></svg>`,
       label: 'Rewrite',
       onClick: showDropdown,
     });
@@ -929,7 +929,7 @@
       // Show loading spinner
       const spinnerHtml = `
         <div class="loading-spinner">
-          <svg width="40" height="40" viewBox="0 0 50 50">
+          <svg width="20" height="20" viewBox="0 0 50 50">
             <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)">
               <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/>
             </circle>
