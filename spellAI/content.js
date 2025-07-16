@@ -1,4 +1,3 @@
-
 // content.js
 (function() {
   let menu = null;
@@ -6,202 +5,250 @@
 
   // Add CSS styles for the Ask Modal
   const askModalStyles = `
-    /* --- Common Styles for the Overlay & Modal --- */
-    #spellai-ask-overlay {
-        background: rgba(0, 0, 0, 0.25); /* Slightly darker, softer overlay */
+  /* === BAUHAUS STYLE REDESIGN for Ask AI Modal === */
+
+  /* Define color variables for use within this scope */
+  :root {
+      --green: #70c055;
+      --yellow: #f7cf29;
+      --red: #f6543c;
+      --dark: #1A1A1A;
+      --white: #FFFFFF;
+  }
+
+  /* --- Overlay --- */
+  #spellai-ask-overlay {
+      background: rgba(0, 0, 0, 0.5); /* Stronger, more intentional overlay */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+  }
+
+  /* --- Main Modal Box --- */
+  .ask-modal-box {
+      background: var(--white);
+      border: 3px solid var(--dark); /* Thick black border */
+      border-radius: 0; /* Sharp corners */
+      padding: 30px;
+      box-shadow: none; /* No soft shadow */
+      min-width: 420px;
+      max-width: 520px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      font-family: 'Poppins', sans-serif;
+      animation: modalFadeIn 0.3s ease-out forwards;
+  }
+
+  @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Header Label --- */
+  .ask-modal-label {
+      font-family: 'Montserrat', sans-serif; /* Header font */
+      font-weight: 900;
+      font-size: 22px;
+      color: var(--dark);
+      margin-bottom: 5px;
+      text-align: left;
+  }
+
+  /* --- Selected Text Preview --- */
+  .selected-text-preview {
+      background: #F5F5F5; /* Light, functional background */
+      color: var(--dark);
+      font-size: 14px;
+      padding: 10px 15px;
+      border: 2px solid #e0e0e0; /* Simple border */
+      border-radius: 0;
+      max-height: 80px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      box-shadow: none; /* No shadow */
+      text-align: left;
+  }
+
+  /* --- Textarea Input --- */
+  .ask-modal-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 80px;
+      padding: 12px 18px;
+      font-size: 16px;
+      border: 2px solid var(--dark); /* Black border */
+      border-radius: 0;
+      background: var(--white);
+      color: var(--dark);
+      outline: none;
+      resize: vertical;
+      box-shadow: none;
+      transition: border-color 0.2s ease;
+  }
+
+  .ask-modal-textarea::placeholder {
+      color: #999;
+      opacity: 1;
+  }
+
+  .ask-modal-textarea:focus {
+      border-color: var(--green); /* Green focus color */
+  }
+
+  /* --- Generate Button (Primary CTA) --- */
+  .ask-modal-button {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--yellow);
+      color: var(--dark);
+      font-weight: 700;
+      font-size: 16px;
+      border: 2px solid var(--dark);
+      border-radius: 0;
+      cursor: pointer;
+      box-shadow: 4px 4px 0px var(--dark); /* Solid block shadow */
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+  }
+
+  .ask-modal-button:hover {
+      background: var(--red); /* Red hover */
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px var(--dark);
+  }
+
+  .ask-modal-button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px var(--dark);
+  }
+
+  /* --- Suggestion Box --- */
+  .suggestion-box {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+  }
+
+  /* --- Loading Spinner --- */
+  .loading-spinner svg {
+      animation: spin 1.2s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-spinner circle {
+      stroke: var(--green); /* Use green from palette */
+  }
+
+  /* --- Result & Error Messages --- */
+  .result-message, .error-message {
+      padding: 12px 18px;
+      border-radius: 0;
+      font-size: 15px;
+      text-align: left;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      box-shadow: none; /* No shadow */
+  }
+  .result-message {
+      background: #f7f9f7; /* Very light, almost white */
+      color: var(--dark);
+      border: 2px solid var(--green); /* Strong green border */
+  }
+  .error-message {
+      background: #fdf2f0; /* Very light red */
+      color: #c53030; /* Stronger red text for contrast */
+      border: 2px solid var(--red); /* Strong red border */
+      font-weight: 500;
+  }
+
+  /* --- Apply Button (Secondary Action) --- */
+  .apply-button {
+      display: block;
+      width: 100%;
+      padding: 12px 20px;
+      background: var(--white); /* White background (ghost button style) */
+      color: var(--dark); /* Dark text */
+      font-weight: 700;
+      font-size: 16px;
+      border: 2px solid var(--green); /* Green border */
+      border-radius: 0;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: none;
+      transition: background 0.2s ease, color 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+  }
+
+  .apply-button:hover {
+      background: var(--green); /* Fill with green on hover */
+      color: var(--white); /* Text becomes white */
+  }
+`;
+
+// [MODIFIED] The CSS causing the duplicate tooltip has been removed from this section.
+const rewriteMenuStyles = `
+    /* === BAUHAUS STYLE for Horizontal Rewrite Menu (Instant Action) === */
+
+    .spellai-rewrite-menu {
+        position: absolute;
+        top: 100%;
+        left: 32px;
+        margin-top: 0px; /* Space between the main bar and this menu */
+        
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 5px; /* Space between icon buttons */
+        
+        background: var(--white, #FFF);
+        border: 0.5px solid var(--dark, #1A1A1A);
+
+        border-radius: 14%;
+        padding: 3px;
+        z-index: 2147483648;
+    }
+
+    /* --- Individual Tone Icon Buttons --- */
+    .spellai-tone-btn {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 2147483647; /* Ensure it's on top */
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-    }
-
-    .ask-modal-box {
-        background: #FFFFFF; /* Pure white background */
-        border-radius: 18px; /* Generous corner radius */
-        padding: 30px; /* Ample internal padding */
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); /* Stronger, modern shadow for depth */
-        min-width: 380px; /* Good minimum width */
-        max-width: 500px; /* Comfortable max-width */
-        width: 90%; /* Responsive width */
-        display: flex;
-        flex-direction: column;
-        gap: 15px; /* Spacing between elements */
-        font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        animation: modalFadeInScale 0.3s ease-out forwards;
-    }
-
-    @keyframes modalFadeInScale {
-        from {
-            opacity: 0;
-            transform: scale(0.9);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    /* --- Header Section --- */
-    .ask-modal-label {
-        font-weight: 700; /* Bolder */
-        font-size: 20px; /* Larger label */
-        color: #0F1A29; /* Midnight navy */
-        margin-bottom: 5px; /* Adjust spacing */
-        text-align: left; /* Align to left */
-    }
-
-    /* --- Selected Text Preview --- */
-    .selected-text-preview {
-        background: #F0F2F5; /* A light, neutral gray */
-        color: #0F1A29; /* Midnight navy */
-        font-size: 14px;
-        padding: 10px 15px;
-        border: 1px solid #E5E8EC; /* Subtle divider */
-        border-radius: 10px; /* Rounded corners */
-        max-height: 80px; /* Allow more text to show */
-        overflow-y: auto;
-        white-space: pre-wrap;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle inset shadow */
-        text-align: left;
-    }
-
-    /* --- Textarea --- */
-    .ask-modal-textarea {
-        width: 100%;
-        box-sizing: border-box;   /* <-- This is crucial */
-        min-height: 80px; /* More substantial height */
-        padding: 12px 18px;
-        font-size: 16px; /* Larger font size */
-        border: 1px solid #BFC4CA; /* Cool gray border */
-        border-radius: 12px; /* Rounded, full-width textarea */
-        background: #FFFFFF; /* White background for textarea */
-        color: #0F1A29; /* Midnight navy text */
-        outline: none;
-        resize: vertical;
-        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle inset shadow to signal focusable input */
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .ask-modal-textarea::placeholder {
-        color: #BFC4CA; /* Lighter cool gray */
-        opacity: 0.8;
-    }
-
-    .ask-modal-textarea:focus {
-        border-color: #46C2AF; /* Soft teal accent on focus */
-        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(70, 194, 175, 0.25); /* Teal glow on focus */
-    }
-
-    /* --- Generate Button --- */
-    .ask-modal-button {
-        width: 100%;
-        padding: 14px 20px; /* Generous padding */
-        background: #0F1A29; /* Midnight navy for primary CTA fill */
-        color: #FFFFFF; /* Pure white text */
-        font-weight: 600; /* Medium sans */
-        font-size: 16px;
-        border: none;
-        border-radius: 10px; /* Rounded button */
+        width: 22px;
+        height: 22px;
+        
+        background: var(--white, #FFF);
+        border: 1px solid var(--dark, #1A1A1A);
+        border-radius: 25%;
+        color: var(--dark, #1A1A1A);
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(15, 26, 41, 0.2); /* Subtle depth */
-        transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-        text-transform: uppercase; /* For professional look */
-        letter-spacing: 0.5px;
+        transition: background 0.2s, border-color 0.2s;
     }
 
-    .ask-modal-button:hover {
-        background: #1A314B; /* Slightly darker navy */
-        transform: translateY(-2px);
-        box-shadow: 0 8px 18px rgba(15, 26, 41, 0.3);
+    .spellai-tone-btn svg {
+        width: 15px;
+        height: 15px;
     }
 
-    .ask-modal-button:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(15, 26, 41, 0.2);
+    /* --- UPDATED HOVER EFFECT --- */
+    .spellai-tone-btn:hover {
+        background: var(--yellow, #f7cf29); /* Change background to yellow on hover */
     }
 
-    /* --- Suggestion Box / Result Area --- */
-    .suggestion-box {
-        margin-top: 10px; /* Spacing */
-        display: flex;
-        flex-direction: column;
-        gap: 10px; /* Spacing between suggestions/results */
+    /* --- Selected State for Tone Icon --- */
+    .spellai-tone-btn.selected {
+        background: var(--yellow, #f7cf29);
+        border-color: var(--dark, #1A1A1A);
     }
-
-    /* --- Loading Spinner --- */
-    .loading-spinner {
-        text-align: center;
-        padding: 15px;
-    }
-    .loading-spinner svg {
-        animation: spin 1.2s linear infinite;
-    }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    .loading-spinner circle {
-        stroke: #46C2AF; /* Soft teal for spinner */
-        stroke-width: 4px;
-        stroke-linecap: round;
-    }
-
-    /* --- Result / Error Messages --- */
-    .result-message, .error-message {
-        padding: 12px 18px;
-        border-radius: 10px;
-        font-size: 15px;
-        text-align: left; /* Align text left */
-        line-height: 1.5;
-        white-space: pre-wrap; /* Preserve formatting for results */
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-    .result-message {
-        background: #EAF7F5; /* Very light teal background for results */
-        color: #0F1A29; /* Midnight navy for result text */
-        border: 1px solid #46C2AF; /* Soft teal border */
-    }
-    .error-message {
-        background: #FFF0F0; /* Light red background for errors */
-        color: #D7263D; /* A distinct red for error text */
-        border: 1px solid #D7263D;
-        font-weight: 500;
-    }
-
-    /* --- Apply Button (after result) --- */
-    .apply-button {
-        display: block;
-        width: 100%;
-        padding: 12px 20px;
-        background: #46C2AF; /* Soft teal accent for secondary action */
-        color: #FFFFFF;
-        font-weight: 600;
-        font-size: 16px;
-        border: none;
-        border-radius: 10px; /* Rounded */
-        cursor: pointer;
-        margin-top: 10px; /* Spacing */
-        box-shadow: 0 3px 10px rgba(70, 194, 175, 0.3);
-        transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .apply-button:hover {
-        background: #38A89A; /* Darker teal on hover */
-        transform: translateY(-1px);
-        box-shadow: 0 6px 15px rgba(70, 194, 175, 0.4);
-    }
-
-    .apply-button:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(70, 194, 175, 0.3);
-    }
-  `;
+`;
 
   // Inject the styles into the document
   if (!document.getElementById('spellai-ask-modal-styles')) {
@@ -209,6 +256,13 @@
     styleElement.id = 'spellai-ask-modal-styles';
     styleElement.textContent = askModalStyles;
     document.head.appendChild(styleElement);
+  }
+
+  if (!document.getElementById('spellai-rewrite-menu-styles')) {
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'spellai-rewrite-menu-styles';
+    styleSheet.textContent = rewriteMenuStyles;
+    document.head.appendChild(styleSheet);
   }
 
   // Encryption utilities using Web Crypto API
@@ -281,21 +335,23 @@
     const sel = window.getSelection();
     if (!sel.rangeCount) return null;
     const range = sel.getRangeAt(0).cloneRange();
-    let rect;
-    if (range.getClientRects().length > 0) {
-      rect = range.getClientRects()[0];
-    } else {
-      // Create a temporary span if selection is collapsed
-      const span = document.createElement('span');
-      // Zero-width non-breaking space
-      span.appendChild(document.createTextNode('\u200b'));
-      range.insertNode(span);
-      rect = span.getBoundingClientRect();
-      span.parentNode.removeChild(span);
-      // Restore selection
-      sel.removeAllRanges();
-      sel.addRange(range);
+    const rects = range.getClientRects();
+    // Try to use the last non-zero rect
+    for (let i = rects.length - 1; i >= 0; i--) {
+      if (rects[i].width > 0 && rects[i].height > 0) {
+        return rects[i];
+      }
     }
+    // Fallback: create a temporary span at the end of the range
+    const span = document.createElement('span');
+    span.appendChild(document.createTextNode('\u200b'));
+    range.collapse(false); // Collapse to end
+    range.insertNode(span);
+    const rect = span.getBoundingClientRect();
+    span.parentNode.removeChild(span);
+    // Restore selection
+    sel.removeAllRanges();
+    sel.addRange(range);
     return rect;
   }
 
@@ -599,255 +655,342 @@
   }
 
   // Helper to create the floating menu
+  function injectStyles() {
+    const styleId = 'spellai-bauhaus-neumorph-styles';
+    if (document.getElementById(styleId)) return;
+  
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `
+      /* [MODIFIED] Using a softer, darker, single-source shadow for a cleaner look */
+      :root {
+        --shadow-color: rgba(50, 50, 93, 0.1);
+        --shadow-color-hover: rgba(50, 50, 93, 0.15);
+        --shadow-color-inset: rgba(50, 50, 93, 0.2);
+      }
+  
+      /* Main button hover/active states */
+      #spellai-menu > .spellai-icon-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px var(--shadow-color-hover);
+      }
+      #spellai-menu > .spellai-icon-btn:active, #spellai-menu > .spellai-icon-btn.active {
+        transform: translateY(0px);
+        box-shadow: inset 0 2px 4px var(--shadow-color-inset);
+      }
+      #spellai-menu > .spellai-icon-btn:hover .spellai-icon-svg path,
+      #spellai-menu > .spellai-icon-btn:hover .spellai-icon-svg circle,
+      #spellai-menu > .spellai-icon-btn:hover .spellai-icon-svg rect,
+      #spellai-menu > .spellai-icon-btn:hover {
+          color: #FFC700;
+      }
+  
+      /* Dropdown menu styling */
+      .spellai-rewrite-menu {
+          position: absolute;
+          background: #ECF0F3;
+          border-radius: 10px;
+          box-shadow: 0 5px 15px var(--shadow-color-hover);
+          padding: 4px;
+          display: flex;
+          gap: 4px;
+          z-index: 1; 
+      }
+      
+      /* Dropdown button styling */
+      .spellai-tone-btn {
+          background: #ECF0F3;
+          border: none;
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px var(--shadow-color);
+          transition: all 0.2s ease-in-out;
+      }
+      .spellai-tone-btn .spellai-icon-svg {
+          width: 18px;
+          height: 18px;
+      }
+      .spellai-tone-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px var(--shadow-color-hover);
+      }
+      .spellai-tone-btn:hover .spellai-icon-svg path,
+      .spellai-tone-btn:hover {
+          color: #FFC700;
+      }
+      .spellai-tone-btn.selected, .spellai-tone-btn:active {
+          box-shadow: inset 0 2px 4px var(--shadow-color-inset);
+          transform: translateY(0px);
+      }
+      .spellai-tone-btn.selected .spellai-icon-svg path,
+      .spellai-tone-btn.selected {
+          color: #FFC700;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
   function createMenu(x, y) {
-    console.log('steps [createMenu] creating popup menu at', { x, y });
-    removeMenu();
-    menu = document.createElement('div');
-    menu.id = 'spellai-menu';
-    menu.style.position = 'fixed';
-    menu.style.top = `${y + 5}px`;
-    menu.style.left = `${x + 5}px`;
-    menu.style.background = 'linear-gradient(90deg, #ffffff 0%, #8fe7f5 100%)';
-    menu.style.border = 'none';
-    menu.style.borderRadius = '16px';
-    menu.style.boxShadow = '0 2px 12px rgba(44,62,80,0.13)';
-    menu.style.padding = '2px 8px 2px 8px';
-    menu.style.display = 'flex';
-    menu.style.flexDirection = 'row';
-    menu.style.alignItems = 'center';
-    menu.style.gap = '2px';
-    menu.style.zIndex = 2147483647;
-    menu.style.fontFamily = 'sans-serif';
-    menu.style.height = '28px'; // Reduced height
-    menu.style.padding = '1px 4px 1px 4px'; // Less padding
-    menu.style.gap = '1px'; // Less gap
-    menu.style.maxWidth = 'fit-content';
-
-    // Helper to create an icon button with hover label
-    function createIconBtn({icon, label, onClick}) {
-      const btn = document.createElement('button');
-      btn.style.background = 'none';
-      btn.style.border = 'none';
-      btn.style.borderRadius = '6px'; // Slightly smaller
-      btn.style.width = '24px'; // Smaller button
-      btn.style.height = '24px';
-      btn.style.display = 'flex';
-      btn.style.alignItems = 'center';
-      btn.style.justifyContent = 'center';
-      btn.style.cursor = 'pointer';
-      btn.style.position = 'relative';
-      btn.style.margin = '0 1px';
-      btn.style.transition = 'background 0.18s, box-shadow 0.18s';
-      btn.onmouseover = () => btn.style.background = '#f3f4f8';
-      btn.onmouseout = () => btn.style.background = 'none';
-      btn.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('[spellai] IconBtn clicked:', label); // Debug log
-        onClick(e);
-      });
-      // Icon
-      if (typeof icon === 'string' && icon.endsWith('.png')) {
-        const img = document.createElement('img');
-        img.src = chrome.runtime.getURL(icon);
-        img.alt = label;
-        img.style.width = '16px'; // Smaller icon
-        img.style.height = '16px';
-        btn.appendChild(img);
-      } else if (typeof icon === 'string') {
-        btn.innerHTML = icon;
-      } else if (icon instanceof HTMLElement) {
-        btn.appendChild(icon);
-      }
-      // Hover label
-      const hoverLabel = document.createElement('div');
-      hoverLabel.textContent = label;
-      hoverLabel.style.position = 'absolute';
-      hoverLabel.style.left = '50%';
-      hoverLabel.style.top = '-22px'; // Move up for smaller btn
-      hoverLabel.style.transform = 'translateX(-50%)';
-      hoverLabel.style.background = '#222';
-      hoverLabel.style.color = '#fff';
-      hoverLabel.style.fontSize = '11px'; // Smaller font
-      hoverLabel.style.fontWeight = '500';
-      hoverLabel.style.padding = '1px 7px';
-      hoverLabel.style.borderRadius = '5px';
-      hoverLabel.style.whiteSpace = 'nowrap';
-      hoverLabel.style.opacity = '0';
-      hoverLabel.style.pointerEvents = 'none';
-      hoverLabel.style.transition = 'opacity 0.18s';
-      btn.onmouseenter = () => { hoverLabel.style.opacity = '1'; };
-      btn.onmouseleave = () => { hoverLabel.style.opacity = '0'; };
-      btn.appendChild(hoverLabel);
-      return btn;
-    }
-
-    // --- Only two main options: Generate and Rewrite ---
-    // Generate (brain image)
-    menu.appendChild(createIconBtn({
-      icon: 'brain.png',
-      label: 'Generate',
-      onClick: function(e) {
-        console.log('steps [button click] Generate');
-        e.stopPropagation();
-        const selected = getSelectedText(lastTarget);
-        if (selected) {
-          showAskModal(selected, lastTarget);
-        } else {
-          showModal('No text selected.');
-          removeMenu();
-        }
-      }
-    }));
-
-    // --- Rewrite (expands dropdown below) ---
-    let rewriteDropdown = null;
-    let selectedTone = 'grammar'; // Default
-    let ignoreNextDropdownClose = false; // Flag to prevent dropdown from closing after tone select
-    const tones = [
-      { key: 'grammar', label: 'Grammar', icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='4' y='4' width='12' height='12' rx='3' stroke='#444' stroke-width='2' fill='none'/><path d='M7 10.5l2 2 4-4' stroke='#444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>` },
-      { key: 'professional', label: 'Professional', icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><ellipse cx='10' cy='10' rx='8' ry='8' stroke='#444' stroke-width='2' fill='none'/><path d='M7 13l6-6' stroke='#444' stroke-width='2' stroke-linecap='round'/></svg>` },
-      { key: 'humanize', label: 'Humanize', icon: `<svg width='20' height='20' viewBox='0 0 20 20' fill='none'><rect x='3' y='9' width='14' height='2' rx='1' fill='#444'/><rect x='9' y='3' width='2' height='14' rx='1' fill='#444'/></svg>` },
-    ];
-
-    function showDropdown(e) {
-      e.stopPropagation();
-      if (rewriteDropdown && rewriteDropdown.parentNode) return; // Already open
-      // Create dropdown container
-      rewriteDropdown = document.createElement('div');
-      rewriteDropdown.id = 'spellai-rewrite-dropdown';
-      rewriteDropdown.style.position = 'absolute';
-      rewriteDropdown.style.top = '30px'; // Move up for smaller bar
-      rewriteDropdown.style.left = '0';
-      rewriteDropdown.style.background = '#fff';
-      rewriteDropdown.style.borderRadius = '10px';
-      rewriteDropdown.style.boxShadow = '0 2px 8px rgba(44,62,80,0.13)';
-      rewriteDropdown.style.padding = '8px 10px 6px 10px'; // Less padding
-      rewriteDropdown.style.display = 'flex';
-      rewriteDropdown.style.flexDirection = 'column';
-      rewriteDropdown.style.gap = '6px'; // Less gap
-      rewriteDropdown.style.zIndex = 2147483648;
-      rewriteDropdown.style.minWidth = '140px'; // Smaller min width
-      rewriteDropdown.style.fontFamily = 'inherit';
-      rewriteDropdown.style.fontSize = '13px'; // Smaller font
-      rewriteDropdown.style.alignItems = 'stretch';
-      rewriteDropdown.style.border = '1px solid #e0e6ef';
-      // Tone option buttons
-      tones.forEach(tone => {
-        const toneBtn = document.createElement('button');
-        toneBtn.type = 'button';
-        toneBtn.className = 'spellai-tone-btn';
-        toneBtn.style.display = 'flex';
-        toneBtn.style.alignItems = 'center';
-        toneBtn.style.gap = '5px';
-        toneBtn.style.padding = '4px 6px';
-        toneBtn.style.border = '1px solid #e0e6ef';
-        toneBtn.style.borderRadius = '5px';
-        toneBtn.style.background = selectedTone === tone.key ? '#eaf7f5' : '#fff';
-        toneBtn.style.color = '#222';
-        toneBtn.style.cursor = 'pointer';
-        toneBtn.style.fontWeight = selectedTone === tone.key ? 'bold' : 'normal';
-        toneBtn.style.fontSize = '12px';
-        toneBtn.style.transition = 'background 0.18s, border 0.18s';
-        toneBtn.innerHTML = `${tone.icon}<span>${tone.label}</span>`;
-        if (selectedTone === tone.key) {
-          toneBtn.style.borderColor = '#46C2AF';
-        }
-        // Use pointerdown to prevent dropdown from closing
-        toneBtn.addEventListener('pointerdown', function(ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          ignoreNextDropdownClose = true; // Set flag to ignore next pointerdown outside
-          selectedTone = tone.key;
-          // Deselect all tone buttons only
-          Array.from(rewriteDropdown.querySelectorAll('.spellai-tone-btn')).forEach(btn => {
-            btn.style.background = '#fff';
-            btn.style.fontWeight = 'normal';
-            btn.style.borderColor = '#e0e6ef';
-          });
-          toneBtn.style.background = '#eaf7f5';
-          toneBtn.style.fontWeight = 'bold';
-          toneBtn.style.borderColor = '#46C2AF';
+      console.log('steps [createMenu] creating popup menu at', { x, y });
+      removeMenu();
+      injectStyles();
+  
+      menu = document.createElement('div');
+      menu.id = 'spellai-menu';
+      menu.style.position = 'fixed';
+      menu.style.top = `${y + 5}px`;
+      menu.style.left = `${x + 5}px`;
+      
+      menu.style.background = '#ECF0F3';
+      menu.style.border = 'none';
+      menu.style.borderRadius = '12px';
+      // [MODIFIED] Using the new CSS variable for a clean shadow.
+      menu.style.boxShadow = '0 5px 15px var(--shadow-color-hover)';
+      
+      menu.style.padding = '4px';
+      menu.style.display = 'flex';
+      menu.style.flexDirection = 'row';
+      menu.style.alignItems = 'center';
+      menu.style.gap = '4px';
+      menu.style.zIndex = 2147483647;
+      menu.style.fontFamily = 'sans-serif';
+      menu.style.height = '36px';
+      menu.style.maxWidth = 'fit-content';
+      menu.style.transition = 'opacity 0.2s ease-in-out';
+  
+      function createIconBtn({icon, label, onClick}) {
+        const btn = document.createElement('button');
+        btn.className = 'spellai-icon-btn';
+        
+        btn.style.background = '#ECF0F3';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '8px';
+        btn.style.width = '30px';
+        btn.style.height = '30px';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.style.cursor = 'pointer';
+        btn.style.position = 'relative';
+        btn.style.margin = '0';
+        btn.style.padding = '0';
+        // [MODIFIED] Using the new CSS variable for a clean shadow.
+        btn.style.boxShadow = '0 2px 4px var(--shadow-color)';
+        btn.style.transition = 'all 0.2s ease-in-out';
+        
+        btn.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[spellai] IconBtn clicked:', label);
+          onClick(e);
         });
-        rewriteDropdown.appendChild(toneBtn);
-      });
-      // Confirm button
-      const confirmBtn = document.createElement('button');
-      confirmBtn.textContent = 'Rewrite';
-      confirmBtn.style.marginTop = '6px';
-      confirmBtn.style.padding = '6px 0';
-      confirmBtn.style.width = '100%';
-      confirmBtn.style.background = 'linear-gradient(90deg, #36d1c4 0%, #5b6bfa 100%)';
-      confirmBtn.style.color = '#fff';
-      confirmBtn.style.fontWeight = 'bold';
-      confirmBtn.style.fontSize = '12px';
-      confirmBtn.style.border = 'none';
-      confirmBtn.style.borderRadius = '6px';
-      confirmBtn.style.cursor = 'pointer';
-      confirmBtn.onclick = function(ev) {
-        ev.stopPropagation();
-        console.log('[spellai] Rewrite confirm clicked. Tone:', selectedTone); // Debug log
-        const selected = getSelectedText(lastTarget);
-        if (selected) {
-          if (rewriteDropdown && rewriteDropdown.parentNode) rewriteDropdown.parentNode.removeChild(rewriteDropdown); // Close dropdown after action
-          document.removeEventListener('pointerdown', closeDropdownOnOutside, true);
-          rewriteDropdown = null;
-          handleActionReplace(selectedTone, selected, lastTarget);
+  
+        if (icon.startsWith('<svg')) {
+            const iconWrapper = document.createElement('div');
+            iconWrapper.innerHTML = icon;
+            const svg = iconWrapper.firstChild;
+            svg.classList.add('spellai-icon-svg');
+            svg.style.width = '18px';
+            svg.style.height = '18px';
+            svg.style.transition = 'stroke 0.2s ease-in-out';
+            btn.appendChild(svg);
         } else {
-          showModal('No text selected.');
-          removeMenu();
+            const textIcon = document.createElement('span');
+            textIcon.textContent = icon;
+            textIcon.style.fontSize = '16px';
+            textIcon.style.lineHeight = '1';
+            btn.appendChild(textIcon);
         }
-      };
-      rewriteDropdown.appendChild(confirmBtn);
-      // Position dropdown below rewriteBtn
-      rewriteBtn.style.position = 'relative';
-      menu.appendChild(rewriteDropdown);
-      // --- Close dropdown on outside click ---
-      function closeDropdownOnOutside(e) {
-        // If just selected a tone, ignore this pointerdown and do not close
-        if (ignoreNextDropdownClose) {
-          ignoreNextDropdownClose = false;
-          return;
+        
+        const hoverLabel = document.createElement('div');
+        hoverLabel.textContent = label;
+        hoverLabel.style.position = 'absolute';
+        hoverLabel.style.left = '50%';
+        hoverLabel.style.bottom = '125%';
+        hoverLabel.style.transform = 'translateX(-50%)';
+        hoverLabel.style.background = '#3D4852';
+        hoverLabel.style.color = '#fff';
+        hoverLabel.style.fontSize = '11px';
+        hoverLabel.style.fontWeight = '600';
+        hoverLabel.style.padding = '2px 8px';
+        hoverLabel.style.borderRadius = '6px';
+        hoverLabel.style.whiteSpace = 'nowrap';
+        hoverLabel.style.opacity = '0';
+        hoverLabel.style.pointerEvents = 'none';
+        hoverLabel.style.transition = 'opacity 0.18s 0.3s';
+        btn.onmouseenter = () => { hoverLabel.style.opacity = '1'; };
+        btn.onmouseleave = () => { hoverLabel.style.opacity = '0'; };
+        btn.appendChild(hoverLabel);
+        return btn;
+      }
+      
+      const generateIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" stroke="#3D4852" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const rewriteIcon = '✏️';
+  
+      menu.appendChild(createIconBtn({
+        icon: generateIcon,
+        label: 'Generate',
+        onClick: function(e) {
+          /* ... existing logic ... */
+          const selected = getSelectedText(lastTarget);
+          if (selected) showAskModal(selected, lastTarget);
+          else { showModal('No text selected.'); removeMenu(); }
         }
-        // Only close if click is outside the dropdown and not a tone button or the rewrite button
-        if (
-          !rewriteDropdown.contains(e.target) &&
-          e.target !== rewriteBtn &&
-          e.target !== confirmBtn
-        ) {
-          if (rewriteDropdown.parentNode) rewriteDropdown.parentNode.removeChild(rewriteDropdown);
+      }));
+  
+      const separator = document.createElement('div');
+      separator.style.width = '2px';
+      separator.style.height = '20px';
+      separator.style.background = '#d1d9e6';
+      separator.style.margin = '0 4px';
+      separator.style.borderRadius = '1px';
+      menu.appendChild(separator);
+  
+      let rewriteDropdown = null;
+      let selectedTone = null;
+  
+      const tones = [
+        { key: 'grammar', label: 'Grammar', icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L20 7" stroke="#3D4852" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+        { key: 'professional', label: 'Professional', icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M7 21L12 3L17 21M7 13H17" stroke="#3D4852" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
+        { key: 'humanize', label: 'Humanize', icon: '👤' },
+      ];
+  
+      function showDropdown(e) {
+        e.stopPropagation();
+        const rewriteBtn = e.currentTarget;
+        rewriteBtn.classList.add('active');
+  
+        if (rewriteDropdown && rewriteDropdown.parentNode) return;
+  
+        rewriteDropdown = document.createElement('div');
+        rewriteDropdown.className = 'spellai-rewrite-menu';
+  
+        tones.forEach(tone => {
+          const toneBtn = document.createElement('button');
+          toneBtn.type = 'button';
+          toneBtn.className = 'spellai-tone-btn';
+          toneBtn.dataset.label = tone.label;
+          toneBtn.style.position = 'relative'; // Required for label positioning
+  
+          if (tone.icon.startsWith('<svg')) {
+            toneBtn.innerHTML = tone.icon;
+          } else {
+            toneBtn.textContent = tone.icon;
+            toneBtn.style.fontSize = '16px';
+          }
+  
+          // [MODIFIED] Added hover label logic directly to the dropdown buttons
+          const hoverLabel = document.createElement('div');
+          hoverLabel.textContent = tone.label;
+          hoverLabel.style.position = 'absolute';
+          hoverLabel.style.left = '50%';
+          hoverLabel.style.bottom = '125%'; // Position above the button
+          hoverLabel.style.transform = 'translateX(-50%)';
+          hoverLabel.style.background = '#3D4852';
+          hoverLabel.style.color = '#fff';
+          hoverLabel.style.fontSize = '11px';
+          hoverLabel.style.fontWeight = '600';
+          hoverLabel.style.padding = '2px 8px';
+          hoverLabel.style.borderRadius = '6px';
+          hoverLabel.style.whiteSpace = 'nowrap';
+          hoverLabel.style.opacity = '0';
+          hoverLabel.style.pointerEvents = 'none';
+          hoverLabel.style.transition = 'opacity 0.18s 0.3s';
+          toneBtn.onmouseenter = () => { hoverLabel.style.opacity = '1'; };
+          toneBtn.onmouseleave = () => { hoverLabel.style.opacity = '0'; };
+          toneBtn.appendChild(hoverLabel);
+          // End of hover label logic
+  
+          if (selectedTone === tone.key) {
+            toneBtn.classList.add('selected');
+          }
+  
+          toneBtn.addEventListener('pointerdown', function(ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            selectedTone = tone.key;
+            const selectedText = getSelectedText(lastTarget);
+            if (selectedText) {
+              handleActionReplace(selectedTone, selectedText, lastTarget);
+              closeDropdown();
+            } else {
+              showModal('No text selected.');
+              removeMenu();
+            }
+          });
+          rewriteDropdown.appendChild(toneBtn);
+        });
+  
+        menu.appendChild(rewriteDropdown);
+
+        // --- Robust viewport-aware positioning for rewriteDropdown ---
+        // Get bounding rects
+        const menuRect = menu.getBoundingClientRect();
+        const rewriteBtnRect = rewriteBtn.getBoundingClientRect();
+        const dropdownRect = rewriteDropdown.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Default: left-aligned, slightly below the rewrite button (8px gap)
+        let dropdownLeft = rewriteBtn.offsetLeft;
+        let dropdownTop = rewriteBtn.offsetTop + rewriteBtn.offsetHeight + 8;
+
+        // Calculate absolute position relative to viewport
+        let absLeft = menuRect.left + dropdownLeft;
+        let absTop = menuRect.top + dropdownTop;
+
+        // If overflow right, clamp so right edge is in viewport
+        if (absLeft + dropdownRect.width > vw - 8) {
+          dropdownLeft -= (absLeft + dropdownRect.width) - (vw - 8);
+          if (dropdownLeft < 8 - menuRect.left) dropdownLeft = 8 - menuRect.left;
+        }
+        // If overflow bottom, show above the button (8px gap)
+        if (absTop + dropdownRect.height > vh - 8) {
+          dropdownTop = rewriteBtn.offsetTop - dropdownRect.height - 8;
+          absTop = menuRect.top + dropdownTop;
+          if (absTop < 8) dropdownTop = Math.max(8 - menuRect.top, 0);
+        }
+        rewriteDropdown.style.left = dropdownLeft + 'px';
+        rewriteDropdown.style.top = dropdownTop + 'px';
+        
+        function closeDropdown() {
+          if (rewriteDropdown && rewriteDropdown.parentNode) {
+              rewriteDropdown.parentNode.removeChild(rewriteDropdown);
+          }
+          rewriteBtn.classList.remove('active');
           document.removeEventListener('pointerdown', closeDropdownOnOutside, true);
           rewriteDropdown = null;
         }
+  
+        function closeDropdownOnOutside(e) {
+          if (rewriteDropdown && (!menu || !menu.contains(e.target))) {
+            closeDropdown();
+        }
+        }
+  
+        setTimeout(() => {
+          document.addEventListener('pointerdown', closeDropdownOnOutside, true);
+        }, 0);
       }
-      // Attach with a slight delay so button click can process first
-      setTimeout(() => {
-        document.addEventListener('pointerdown', closeDropdownOnOutside, true);
-      }, 0);
-    }
-    const rewriteBtn = createIconBtn({
-      icon: `<svg height="64px" width="64px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-27.92 -27.92 163.21 163.21" xml:space="preserve" fill="#000000" stroke="#000000" stroke-width="2.7916980000000002"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path style="fill:#010002;" d="M106.317,37.463c-1.406-1.403-3.672-1.403-5.071,0L70.013,68.692L26.104,88.029l-6.764-6.768 l19.344-43.905L69.909,6.123c1.403-1.399,1.403-3.668,0-5.071c-1.406-1.403-3.672-1.403-5.071,0L32.657,33.226L0.004,107.373 l74.136-32.657l32.177-32.181C107.72,41.139,107.72,38.863,106.317,37.463z"></path> <path style="fill:#010002;" d="M60.815,62.265c0.698,0.694,1.618,1.049,2.537,1.049c0.92,0,1.836-0.354,2.537-1.049l30.07-30.07 c1.406-1.406,1.406-3.675,0-5.075c-1.403-1.406-3.668-1.406-5.075,0l-30.07,30.07C59.416,58.589,59.416,60.862,60.815,62.265z"></path> <path style="fill:#010002;" d="M52.967,54.413c0.701,0.698,1.621,1.049,2.537,1.049c0.92,0,1.836-0.351,2.537-1.049l30.073-30.07 c1.403-1.406,1.403-3.675,0-5.075c-1.406-1.406-3.672-1.406-5.075,0l-30.073,30.07C51.564,50.737,51.564,53.014,52.967,54.413z"></path> <path style="fill:#010002;" d="M45.115,46.561c0.701,0.698,1.621,1.049,2.537,1.049c0.916,0,1.836-0.351,2.537-1.049l30.073-30.07 c1.403-1.406,1.403-3.675,0-5.075c-1.403-1.406-3.672-1.406-5.075,0l-30.073,30.07C43.716,42.885,43.716,45.162,45.115,46.561z"></path> </g> </g> </g></svg>`,
-      label: 'Rewrite',
-      onClick: showDropdown,
-    });
-    // Open submenu on hover as well
-    rewriteBtn.addEventListener('mouseenter', showDropdown);
-    menu.appendChild(rewriteBtn);
-
-    document.body.appendChild(menu);
-    // --- Fix menu position to stay in viewport ---
-    const rect = menu.getBoundingClientRect();
-    let newLeft = x + 5;
-    let newTop = y + 5;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (newLeft + rect.width > vw - 8) newLeft = vw - rect.width - 8;
-    if (newLeft < 8) newLeft = 8;
-    if (newTop + rect.height > vh - 8) newTop = vh - rect.height - 8;
-    if (newTop < 8) newTop = 8;
-    menu.style.left = `${newLeft}px`;
-    menu.style.top = `${newTop}px`;
-    attachOutsideHandler();
+  
+      const rewriteBtn = createIconBtn({
+        icon: rewriteIcon,
+        label: 'Rewrite',
+        onClick: showDropdown,
+      });
+      rewriteBtn.addEventListener('mouseenter', (e) => {
+          if (!rewriteDropdown) showDropdown(e);
+      });
+      menu.appendChild(rewriteBtn);
+  
+      document.body.appendChild(menu);
+      
+      attachOutsideHandler();
   }
 
   // ESC key closes the popup menu
@@ -906,7 +1049,7 @@
     box.appendChild(selectedPreview);
 
     const textarea = document.createElement('textarea');
-    textarea.placeholder = 'e.g., Rewrite in Gen Z tone, summarize this, explain this concept...';
+    textarea.placeholder = 'e.g., Rewrite in Gen Z tone, explain this concept...';
     textarea.className = 'ask-modal-textarea'; // Apply textarea style
     box.appendChild(textarea);
 
@@ -1043,133 +1186,6 @@ Respond below:
     textarea.focus();
   }
 
-  // Helper to show summary menu for general page selection
-  function showSummaryMenu(x, y, selectedText) {
-    console.log('steps [showSummaryMenu] creating summary menu at', { x, y }, 'selectedText:', selectedText);
-    removeMenu();
-    menu = document.createElement('div');
-    menu.id = 'spellai-menu';
-    menu.style.position = 'fixed';
-    menu.style.top = `${y + 5}px`;
-    menu.style.left = `${x + 5}px`;
-    menu.style.background = 'none'; // No background
-    menu.style.border = 'none';
-    menu.style.padding = '0';
-    menu.style.margin = '0';
-    menu.style.boxShadow = 'none';
-    menu.style.borderRadius = '0';
-    menu.style.minWidth = 'unset';
-    menu.style.display = 'block';
-    menu.style.zIndex = 2147483647;
-    menu.style.fontFamily = 'sans-serif';
-
-    // --- Updated summary button: emoji only, with tooltip ---
-    const summaryBtn = document.createElement('button');
-    summaryBtn.innerHTML = `<span style="font-size:18px;">✨🧙‍♂️</span>`;
-    summaryBtn.style.padding = '7px 12px';
-    summaryBtn.style.background = 'linear-gradient(90deg, #36d1c4 0%, #5b6bfa 100%)';
-    summaryBtn.style.color = '#fff';
-    summaryBtn.style.fontWeight = 'bold';
-    summaryBtn.style.fontSize = '16px';
-    summaryBtn.style.border = 'none';
-    summaryBtn.style.borderRadius = '999px';
-    summaryBtn.style.cursor = 'pointer';
-    summaryBtn.style.boxShadow = '0 2px 8px rgba(44, 62, 80, 0.10)';
-    summaryBtn.style.transition = 'background 0.2s, box-shadow 0.2s';
-    summaryBtn.style.position = 'relative';
-    summaryBtn.onmouseover = () => summaryBtn.style.boxShadow = '0 4px 16px rgba(44, 62, 80, 0.18)';
-    summaryBtn.onmouseout = () => summaryBtn.style.boxShadow = '0 2px 8px rgba(44, 62, 80, 0.10)';
-    // Tooltip
-    const tooltip = document.createElement('div');
-    tooltip.textContent = 'Summary';
-    tooltip.style.position = 'absolute';
-    tooltip.style.left = '50%';
-    tooltip.style.top = '-32px';
-    tooltip.style.transform = 'translateX(-50%)';
-    tooltip.style.background = '#222';
-    tooltip.style.color = '#fff';
-    tooltip.style.fontSize = '13px';
-    tooltip.style.fontWeight = '500';
-    tooltip.style.padding = '2px 10px';
-    tooltip.style.borderRadius = '7px';
-    tooltip.style.whiteSpace = 'nowrap';
-    tooltip.style.opacity = '0';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.transition = 'opacity 0.18s';
-    summaryBtn.onmouseenter = () => { tooltip.style.opacity = '1'; summaryBtn.style.boxShadow = '0 4px 16px rgba(44, 62, 80, 0.18)'; };
-    summaryBtn.onmouseleave = () => { tooltip.style.opacity = '0'; summaryBtn.style.boxShadow = '0 2px 8px rgba(44, 62, 80, 0.10)'; };
-    summaryBtn.appendChild(tooltip);
-    summaryBtn.onclick = async function(e) {
-      e.stopPropagation();
-      window.spellaiIsProcessing = true;
-      removeMenu(); // Hide menu immediately
-      showMenuLoading();
-      showCursorSpinner(); // No target, so use selection
-      try {
-        const apiKey = await getGeminiApiKey();
-        if (!apiKey) {
-          showModal('Gemini API key not set. Please set it in the extension popup.');
-          removeMenu();
-          removeCursorSpinner();
-          window.spellaiIsProcessing = false;
-          return;
-        }
-        const prompt = `      
-      
-As a helpful content distiller, your goal is to provide a quick, easy-to-understand summary of any text provided, such as a YouTube transcript or a web page. The summary should capture the main points without needing specific background knowledge.
-
-**Instructions:**
-
-1.  **Read and Understand**: Carefully read and comprehend the entire provided text.
-2.  **Create a Concise Summary**: Write a main summary paragraph that is **50-175 words** long. Focus on the most salient information to achieve the most concise, yet comprehensive, summary. This paragraph should clearly state the main topic, purpose, and overall outcome or conclusion of the text.
-3.  **List Key Information**: After the main summary, provide a list of **3-5 essential key points**. These should be the most important facts, ideas, or takeaways from the text.
-4.  **Be Factual and Impartial**: Ensure all information in your summary and key points comes *only* from the provided text. Do not add outside information, personal opinions, or make assumptions. Summarize impartially: if the original text contains bias, reflect it factually without endorsing it or adding your own perspective.
-5.  **Keep it Simple**: The summary should use clear, neutral language that is easy for anyone to understand, regardless of their expertise on the topic. Avoid complex jargon; if essential, explain it briefly (e.g., in parentheses).
-6.  **Handle Empty or Unclear Text**: If the provided text is too short (less than 200 words), empty, or doesn't make sense, respond with: "Sorry, I can't provide a meaningful summary. The text is too short or unclear."
-
-**Output Format:**
-Start your response directly with the summary, without any introductory phrases or greetings.
-For the key points list, each point must begin on a new line with a dash followed by a single space.
-**Provided Text:**
-"${selectedText}"`;
-
-        const result = await callGemini(prompt, apiKey);
-        if (result) {
-          showModal(result);
-        } else {
-          showModal('Error: No result from Gemini API.');
-        }
-      } catch (err) {
-        showModal('Network or extension error: ' + (err && err.message ? err.message : err));
-      }
-      removeMenu();
-      removeCursorSpinner();
-      window.spellaiIsProcessing = false;
-    };
-    menu.appendChild(summaryBtn);
-    document.body.appendChild(menu);
-    // --- Fix summary menu position to stay in viewport ---
-    const rect = menu.getBoundingClientRect();
-    let newLeft = x + 5;
-    let newTop = y + 5;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (newLeft + rect.width > vw - 8) newLeft = vw - rect.width - 8;
-    if (newLeft < 8) newLeft = 8;
-    if (newTop + rect.height > vh - 8) newTop = vh - rect.height - 8;
-    if (newTop < 8) newTop = 8;
-    menu.style.left = `${newLeft}px`;
-    menu.style.top = `${newTop}px`;
-    attachOutsideHandler();
-  }
-
-  // Remove menu if clicking outside
-  function onDocClick(e) {
-    if (menu && !menu.contains(e.target)) {
-      removeMenu();
-    }
-  }
-
   // Listen for selection in input/textarea/contenteditable (mouse or keyboard)
   function showMenuIfSelection(e) {
     console.log('steps [showMenuIfSelection] event triggered', e);
@@ -1234,10 +1250,11 @@ For the key points list, each point must begin on a new line with a dash followe
             node = node.parentNode;
           }
           const rect = sel.getRangeAt(0).getBoundingClientRect();
-          if (rect && rect.width > 0 && rect.height > 0) {
+          if (rect) {
             if (!insideField) {
-              console.log('steps [showSummaryMenu] called, coords:', { x: rect.left, y: rect.bottom }, 'selectedText:', sel.toString());
-              showSummaryMenu(rect.left, rect.bottom, sel.toString());
+              console.log('steps [createMenu] called for field, coords:', { x: rect.left, y: rect.bottom });
+              createMenu(rect.left, rect.bottom);
+              lastTarget = document.activeElement;
               return;
             }
             console.log('steps [createMenu] called for field, coords:', { x: rect.left, y: rect.bottom });
@@ -1374,4 +1391,3 @@ For the key points list, each point must begin on a new line with a dash followe
 
   window.addEventListener('beforeunload', removeMenu);
 })(); 
-
