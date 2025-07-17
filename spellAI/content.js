@@ -4,21 +4,30 @@
   let lastTarget = null;
 
   // Add CSS styles for the Ask Modal
-  const askModalStyles = `
-  /* === BAUHAUS STYLE REDESIGN for Ask AI Modal === */
+const askModalStyles = `
+  /* === BAUHAUS + NEUMORPHISM Blend for Ask AI Modal === */
 
-  /* Define color variables for use within this scope */
+  /* 
+   *  --bg-color: The base color for the neumorphic effect.
+   *  --shadow-dark: The darker shade for the bottom-right shadow.
+   *  --shadow-light: The lighter shade for the top-left highlight.
+   *  --bauhaus-yellow, --bauhaus-blue, --bauhaus-red: Primary color accents.
+   *  --text-color: Main text color for contrast and readability.
+   */
   :root {
-      --green: #70c055;
-      --yellow: #f7cf29;
-      --red: #f6543c;
-      --dark: #1A1A1A;
-      --white: #FFFFFF;
+      --bg-color: #eef2f5;
+      --shadow-dark: #d1d9e6;
+      --shadow-light: #ffffff;
+      --bauhaus-yellow: #f7b733;
+      --bauhaus-blue: #3498db;
+      --bauhaus-red: #e74c3c;
+      --text-color: #3d4a5c;
   }
 
   /* --- Overlay --- */
   #spellai-ask-overlay {
-      background: rgba(0, 0, 0, 0.5); /* Stronger, more intentional overlay */
+      background: rgba(50, 50, 70, 0.4);
+      backdrop-filter: blur(4px); /* Adds a modern, glassy effect */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -28,168 +37,174 @@
       width: 100vw; height: 100vh;
   }
 
-  /* --- Main Modal Box --- */
+  /* --- Main Modal Box (Extruded Neumorphism) --- */
   .ask-modal-box {
-      background: var(--white);
-      border: 3px solid var(--dark); /* Thick black border */
-      border-radius: 0; /* Sharp corners */
-      padding: 30px;
-      box-shadow: none; /* No soft shadow */
+      background: var(--bg-color);
+      border-radius: 20px; /* Soft Neumorphic corners */
+      padding: 25px;
+      /* The core neumorphic "extrude" shadow */
+      // box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
       min-width: 420px;
       max-width: 520px;
       width: 90%;
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      font-family: 'Poppins', sans-serif;
-      animation: modalFadeIn 0.3s ease-out forwards;
+      gap: 20px;
+      font-family: 'Poppins', 'Helvetica Neue', sans-serif;
+      border: 1px solid var(--shadow-light); /* Subtle border to help definition */
+      animation: modalPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
 
-  @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+  @keyframes modalPopIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
   }
 
-  /* --- Header Label --- */
+  /* --- Header Label (Bauhaus Typography) --- */
   .ask-modal-label {
-      font-family: 'Montserrat', sans-serif; /* Header font */
-      font-weight: 900;
-      font-size: 22px;
-      color: var(--dark);
-      margin-bottom: 5px;
-      text-align: left;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-color);
+      text-align: center;
+      letter-spacing: 1px;
+      text-transform: uppercase;
   }
 
-  /* --- Selected Text Preview --- */
+  /* --- Selected Text Preview (Functional Display) --- */
   .selected-text-preview {
-      background: #F5F5F5; /* Light, functional background */
-      color: var(--dark);
+      background: linear-gradient(145deg, #d5dbe0, #fdffff);
+      color: var(--text-color);
       font-size: 14px;
       padding: 10px 15px;
-      border: 2px solid #e0e0e0; /* Simple border */
-      border-radius: 0;
+      border-radius: 8px;
       max-height: 80px;
       overflow-y: auto;
-      white-space: pre-wrap;
-      box-shadow: none; /* No shadow */
-      text-align: left;
+      border: 1px solid var(--shadow-dark);
+      box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
   }
 
-  /* --- Textarea Input --- */
+  /* --- Textarea Input (Inset Neumorphism) --- */
   .ask-modal-textarea {
       width: 100%;
       box-sizing: border-box;
       min-height: 80px;
-      padding: 12px 18px;
-      font-size: 16px;
-      border: 2px solid var(--dark); /* Black border */
-      border-radius: 0;
-      background: var(--white);
-      color: var(--dark);
+      padding: 15px;
+      font-size: 15px;
+      border-radius: 12px;
+      background: var(--bg-color);
+      color: var(--text-color);
       outline: none;
       resize: vertical;
-      box-shadow: none;
-      transition: border-color 0.2s ease;
+      border: none;
+      /* The core neumorphic "inset" shadow */
+      box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+      transition: box-shadow 0.2s ease-in-out;
   }
 
   .ask-modal-textarea::placeholder {
-      color: #999;
-      opacity: 1;
+      color: #99a3b1;
   }
 
   .ask-modal-textarea:focus {
-      border-color: var(--green); /* Green focus color */
+      /* Add a colorful Bauhaus-style glow on focus */
+      box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                  inset -5px -5px 10px var(--shadow-light),
+                  0 0 0 3px var(--bauhaus-blue);
   }
 
-  /* --- Generate Button (Primary CTA) --- */
+  /* --- Generate Button (Primary CTA - Playful & Tactile) --- */
   .ask-modal-button {
       width: 100%;
-      padding: 14px 20px;
-      background: var(--yellow);
-      color: var(--dark);
-      font-weight: 700;
+      padding: 15px 20px;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-weight: 600;
       font-size: 16px;
-      border: 2px solid var(--dark);
-      border-radius: 0;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
-      box-shadow: 4px 4px 0px var(--dark); /* Solid block shadow */
-      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+      /* Extruded Neumorphic button */
+      box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+      transition: all 0.15s ease-out;
       text-transform: uppercase;
-      letter-spacing: 1px;
   }
 
   .ask-modal-button:hover {
-      background: var(--red); /* Red hover */
-      transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px var(--dark);
+      color: var(--bauhaus-blue);
   }
 
   .ask-modal-button:active {
-      transform: translate(2px, 2px);
-      box-shadow: 0px 0px 0px var(--dark);
+      /* On click, it becomes inset (pressed) - this is the playful part */
+      box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
+      color: var(--bauhaus-blue);
+      transform: translateY(2px);
   }
 
   /* --- Suggestion Box --- */
   .suggestion-box {
-      margin-top: 10px;
+      margin-top: 5px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
   }
 
   /* --- Loading Spinner --- */
-  .loading-spinner svg {
-      animation: spin 1.2s linear infinite;
+  .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-spinner circle {
-      stroke: var(--green); /* Use green from palette */
+  .loading-spinner svg circle {
+      stroke: var(--bauhaus-blue);
+      stroke-width: 5;
+      stroke-dasharray: 40 150; /* Creates a more dynamic dash effect */
   }
 
-  /* --- Result & Error Messages --- */
+  /* --- Result & Error Messages (Functional Bauhaus Style) --- */
   .result-message, .error-message {
-      padding: 12px 18px;
-      border-radius: 0;
+      padding: 15px;
+      border-radius: 12px;
       font-size: 15px;
-      text-align: left;
-      line-height: 1.5;
+      line-height: 1.6;
       white-space: pre-wrap;
-      box-shadow: none; /* No shadow */
+      border: 2px solid;
   }
   .result-message {
-      background: #f7f9f7; /* Very light, almost white */
-      color: var(--dark);
-      border: 2px solid var(--green); /* Strong green border */
+      background: #e6f3e6; /* Light Green */
+      color: #2b6b2b;
+      border-color: #5cb85c;
   }
   .error-message {
-      background: #fdf2f0; /* Very light red */
-      color: #c53030; /* Stronger red text for contrast */
-      border: 2px solid var(--red); /* Strong red border */
+      background: #f8e5e3; /* Light Red */
+      color: #a94442;
+      border-color: var(--bauhaus-red);
       font-weight: 500;
   }
 
-  /* --- Apply Button (Secondary Action) --- */
+  /* --- Apply Button (Secondary Action - Clear & Functional) --- */
   .apply-button {
-      display: block;
       width: 100%;
-      padding: 12px 20px;
-      background: var(--white); /* White background (ghost button style) */
-      color: var(--dark); /* Dark text */
+      padding: 13px 20px;
+      background: var(--bauhaus-blue);
+      color: white;
       font-weight: 700;
       font-size: 16px;
-      border: 2px solid var(--green); /* Green border */
-      border-radius: 0;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
-      margin-top: 10px;
-      box-shadow: none;
-      transition: background 0.2s ease, color 0.2s ease;
+      transition: background 0.2s ease, transform 0.1s ease;
       text-transform: uppercase;
-      letter-spacing: 1px;
   }
 
   .apply-button:hover {
-      background: var(--green); /* Fill with green on hover */
-      color: var(--white); /* Text becomes white */
+      background: #2980b9; /* Darker blue on hover */
+      transform: translateY(-2px);
+  }
+
+  .apply-button:active {
+      transform: translateY(1px);
   }
 `;
 
@@ -1022,14 +1037,34 @@ const rewriteMenuStyles = `
         }
       }
     }
+    // Create overlay container
+    const overlayContainer = document.createElement('div');
+    overlayContainer.id = 'spellai-ask-overlay-container';
+    overlayContainer.style.position = 'fixed';
+    overlayContainer.style.top = '0';
+    overlayContainer.style.left = '0';
+    overlayContainer.style.width = '100vw';
+    overlayContainer.style.height = '100vh';
+    overlayContainer.style.zIndex = '2147483647';
+    document.body.appendChild(overlayContainer);
+
+    // Attach shadow root
+    const shadow = overlayContainer.attachShadow({ mode: 'open' });
+
+    // Add styles to shadow root
+    const styleElement = document.createElement('style');
+    styleElement.textContent = askModalStyles;
+    shadow.appendChild(styleElement);
+
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'spellai-ask-overlay';
-    // No inline styles here, they are in CSS
+    shadow.appendChild(overlay);
 
     // Create Generate box
     const box = document.createElement('div');
     box.className = 'ask-modal-box'; // Apply the main modal box style
+    overlay.appendChild(box);
 
     const label = document.createElement('div');
     label.textContent = 'Ask anything:';
@@ -1140,7 +1175,7 @@ Respond below:
               insertTarget = lastTarget;
             }
             if (!insertTarget || !(insertTarget.tagName === 'INPUT' || insertTarget.tagName === 'TEXTAREA' || insertTarget.isContentEditable)) {
-              overlay.remove();
+              overlayContainer.remove();
               return;
             }
             if (insertTarget.focus) insertTarget.focus();
@@ -1157,7 +1192,7 @@ Respond below:
             }
             replaceSelectedText(insertTarget, result);
             ev.stopPropagation();
-            overlay.remove();
+            overlayContainer.remove();
           };
           suggestionBox.appendChild(applyBtn);
         } else {
@@ -1170,17 +1205,14 @@ Respond below:
 
     // Close on outside click or ESC
     overlay.onclick = function(e) {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) overlayContainer.remove();
     };
     document.addEventListener('keydown', function escHandler(e) {
       if (e.key === 'Escape') {
-        overlay.remove();
+        overlayContainer.remove();
         document.removeEventListener('keydown', escHandler);
       }
     });
-
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
 
     // Focus on the textarea when the modal opens
     textarea.focus();
@@ -1189,7 +1221,7 @@ Respond below:
   // Listen for selection in input/textarea/contenteditable (mouse or keyboard)
   function showMenuIfSelection(e) {
     console.log('steps [showMenuIfSelection] event triggered', e);
-    if (window.spellaiIsProcessing) {
+    if (window.spellaiIsProcessing) { 
       removeMenu();
       return;
     }
@@ -1358,14 +1390,30 @@ Respond below:
   }, true);
   // --- Suppress popup menu in shortcut mode ---
   const origShowMenuIfSelection = showMenuIfSelection;
+  function isInContentEditable(node) {
+    while (node) {
+      if (node.nodeType === 1 && node.isContentEditable) return true;
+      node = node.parentNode;
+    }
+    return false;
+  }
   function showMenuIfSelectionPatched(e) {
-    if (spellaiMode === 'shortcut') {
+    if (window.spellaiModalOpen) {
+      removeMenu();
+      return;
+    }
+    const target = e && e.target;
+    // Only allow popup for input[type=text], textarea, or inside contenteditable
+    const isInput = (target && target.tagName === 'INPUT' && target.type === 'text') || (target && target.tagName === 'TEXTAREA');
+    const isEditable = isInContentEditable(target);
+    if (!isInput && !isEditable) {
       removeMenu();
       return;
     }
     origShowMenuIfSelection(e);
   }
   // Patch event listeners
+  // Remove old listeners if present
   document.removeEventListener('mouseup', showMenuIfSelection);
   document.removeEventListener('keyup', showMenuIfSelection);
   document.removeEventListener('selectionchange', showMenuIfSelection);
