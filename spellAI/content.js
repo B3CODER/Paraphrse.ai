@@ -253,6 +253,11 @@ const rewriteMenuStyles = `
         height: 15px;
     }
 
+    .menu-icon {
+        width: 19px;
+        height: 19px;
+    }
+
     /* --- UPDATED HOVER EFFECT --- */
     .spellai-tone-btn:hover {
         background: var(--yellow, #f7cf29); /* Change background to yellow on hover */
@@ -338,7 +343,6 @@ const rewriteMenuStyles = `
 
   // Helper to remove the menu
   function removeMenu() {
-    console.log('steps [removeMenu] removing popup menu');
     if (menu) {
       menu.remove();
       menu = null;
@@ -751,7 +755,6 @@ const rewriteMenuStyles = `
   }
   
   function createMenu(x, y) {
-      console.log('steps [createMenu] creating popup menu at', { x, y });
       removeMenu();
       injectStyles();
   
@@ -868,13 +871,12 @@ const rewriteMenuStyles = `
   
       let rewriteDropdown = null;
       let selectedTone = null;
-  
+      
       const tones = [
-        { key: 'grammar', label: 'Grammar', icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L20 7" stroke="#3D4852" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
-        { key: 'professional', label: 'Professional', icon: `<svg viewBox="0 0 24 24" fill="none"><path d="M7 21L12 3L17 21M7 13H17" stroke="#3D4852" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>` },
-        { key: 'humanize', label: 'Humanize', icon: '👤' },
+        { key: 'grammar', label: 'Grammar', icon: `<img src="${chrome.runtime.getURL('Grammar.png')}" alt="Grammar Icon" class="menu-icon">` },
+        { key: 'professional', label: 'Professional', icon: `<img src="${chrome.runtime.getURL('professional.png')}" alt="Professional Icon" class="menu-icon">`  },
+        { key: 'humanize', label: 'Humanize', icon: `<img src="${chrome.runtime.getURL('Humanize.png')}" alt="Humanize Icon" class="menu-icon">` },
       ];
-  
       function showDropdown(e) {
         e.stopPropagation();
         const rewriteBtn = e.currentTarget;
@@ -892,7 +894,7 @@ const rewriteMenuStyles = `
           toneBtn.dataset.label = tone.label;
           toneBtn.style.position = 'relative'; // Required for label positioning
   
-          if (tone.icon.startsWith('<svg')) {
+          if (tone.icon.startsWith('<')) {
             toneBtn.innerHTML = tone.icon;
           } else {
             toneBtn.textContent = tone.icon;
@@ -1005,6 +1007,26 @@ const rewriteMenuStyles = `
   
       document.body.appendChild(menu);
       
+      // --- Always position at the endpoint of the selection for textarea/input ---
+      if (lastTarget && (lastTarget.tagName === 'INPUT' || lastTarget.tagName === 'TEXTAREA')) {
+        // Always use the endpoint of the selection
+        const endpoint = Math.max(lastTarget.selectionStart, lastTarget.selectionEnd);
+        const caretCoords = getCaretCoordsAtIndex(lastTarget, endpoint);
+        if (caretCoords) {
+          // Clamp the popup position to always be fully visible in the viewport
+          const menuRect = menu.getBoundingClientRect();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const menuWidth = menuRect.width;
+          const menuHeight = menuRect.height;
+          let left = caretCoords.x + 5;
+          let top = caretCoords.y + 5;
+          left = Math.max(0, Math.min(left, vw - menuWidth));
+          top = Math.max(0, Math.min(top, vh - menuHeight));
+          menu.style.left = `${left}px`;
+          menu.style.top = `${top}px`;
+        }
+      }
       attachOutsideHandler();
   }
 
@@ -1050,7 +1072,6 @@ const rewriteMenuStyles = `
 
     // Attach shadow root
     const shadow = overlayContainer.attachShadow({ mode: 'open' });
-
     // Add styles to shadow root
     const styleElement = document.createElement('style');
     styleElement.textContent = askModalStyles;
@@ -1067,7 +1088,7 @@ const rewriteMenuStyles = `
     overlay.appendChild(box);
 
     const label = document.createElement('div');
-    label.textContent = 'Ask anything:';
+    label.textContent = 'Let’s Tweak It';
     label.className = 'ask-modal-label'; // Apply label style
     box.appendChild(label);
 
@@ -1084,7 +1105,7 @@ const rewriteMenuStyles = `
     box.appendChild(selectedPreview);
 
     const textarea = document.createElement('textarea');
-    textarea.placeholder = 'e.g., Rewrite in Gen Z tone, explain this concept...';
+    textarea.placeholder = 'e.g., write an email, improve this text, explain something, translate, or write a reply...';
     textarea.className = 'ask-modal-textarea'; // Apply textarea style
     box.appendChild(textarea);
 
@@ -1399,6 +1420,11 @@ Respond below:
   }
   function showMenuIfSelectionPatched(e) {
     if (window.spellaiModalOpen) {
+      removeMenu();
+      return;
+    }
+    // --- Prevent popup menu in shortcut mode ---
+    if (spellaiMode === 'shortcut') {
       removeMenu();
       return;
     }

@@ -31,7 +31,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["brain.png"],
+      "resources": ["brain.png","professional.png","Grammar.png","Humanize.png"],
       "matches": ["<all_urls>"]
     }
   ]
