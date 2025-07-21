@@ -100,6 +100,11 @@ const askModalStyles = `
       /* The core neumorphic "inset" shadow */
       box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
       transition: box-shadow 0.2s ease-in-out;
+      overflow-y: auto;
+      scrollbar-width: none; /* Firefox */
+  }
+  .ask-modal-textarea::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
   }
 
   .ask-modal-textarea::placeholder {
@@ -713,7 +718,7 @@ const rewriteMenuStyles = `
           padding: 4px;
           display: flex;
           gap: 4px;
-          z-index: 1; 
+          z-index: 2147483648; 
       }
       
       /* Dropdown button styling */
@@ -856,8 +861,7 @@ const rewriteMenuStyles = `
         onClick: function(e) {
           /* ... existing logic ... */
           const selected = getSelectedText(lastTarget);
-          if (selected) showAskModal(selected, lastTarget);
-          else { showModal('No text selected.'); removeMenu(); }
+          showAskModal(selected, lastTarget);
         }
       }));
   
@@ -1098,9 +1102,7 @@ const rewriteMenuStyles = `
     selectedPreview.className = 'selected-text-preview'; // Apply preview style
     // Add text if there's no selection
     if (!selectedText || selectedText.trim() === '') {
-      selectedPreview.textContent = 'No text selected. Ask a general question.';
-      selectedPreview.style.fontStyle = 'italic';
-      selectedPreview.style.opacity = '0.7';
+      selectedPreview.style.display = 'none';
     }
     box.appendChild(selectedPreview);
 
