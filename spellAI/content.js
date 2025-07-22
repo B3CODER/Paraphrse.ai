@@ -360,29 +360,23 @@ const rewriteMenuStyles = `
     if (!sel.rangeCount) return null;
     const range = sel.getRangeAt(0).cloneRange();
     const rects = range.getClientRects();
-    // Try to use the last non-zero rect (usually the visible end)
+    // Try to use the last non-zero rect
     for (let i = rects.length - 1; i >= 0; i--) {
       if (rects[i].width > 0 && rects[i].height > 0) {
         return rects[i];
       }
     }
-    // If no valid rect, try both ends of the range
-    function getCaretRect(collapseToStart) {
-      const tempRange = range.cloneRange();
-      tempRange.collapse(collapseToStart);
-      const span = document.createElement('span');
-      span.appendChild(document.createTextNode('\u200b'));
-      tempRange.insertNode(span);
-      const rect = span.getBoundingClientRect();
-      span.parentNode.removeChild(span);
-      return rect;
-    }
-    // Try end first (for left-to-right), then start (for right-to-left)
-    let endRect = getCaretRect(false);
-    if (endRect.width > 0 && endRect.height > 0) return endRect;
-    let startRect = getCaretRect(true);
-    if (startRect.width > 0 && startRect.height > 0) return startRect;
-    return null;
+    // Fallback: create a temporary span at the end of the range
+    const span = document.createElement('span');
+    span.appendChild(document.createTextNode('\u200b'));
+    range.collapse(false); // Collapse to end
+    range.insertNode(span);
+    const rect = span.getBoundingClientRect();
+    span.parentNode.removeChild(span);
+    // Restore selection
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return rect;
   }
 
   // Helper to get selected text from input, textarea, or contenteditable
@@ -617,8 +611,38 @@ const rewriteMenuStyles = `
     }
   }
 
+  // Helper to check if text has at least 3 words after trimming
+  function hasMinimumWords(text) {
+    if (!text) return false;
+    // Remove all extra spaces (front, end, and between words) and split into words
+    const words = text.trim().replace(/\s+/g, ' ').split(' ').filter(word => word.length > 0);
+    return words.length >= 3;
+  }
+
+  // Helper to check if text is only whitespace
+  function isOnlyWhitespace(text) {
+    return !text || text.trim().length === 0;
+  }
+
   // Helper to call Gemini and replace text for each action
   async function handleActionReplace(action, text, target) {
+    // First check for whitespace or minimum words
+    if (isOnlyWhitespace(text)) {
+      showModal('No text selected.');
+      removeMenu();
+      removeCursorSpinner();
+      window.spellaiIsProcessing = false;
+      return;
+    }
+
+    if (!hasMinimumWords(text)) {
+      showModal('Please select at least 3 words to use rewrite options.');
+      removeMenu();
+      removeCursorSpinner();
+      window.spellaiIsProcessing = false;
+      return;
+    }
+
     console.log('[spellai] handleActionReplace called:', {action, text, target}); // Debug log
     let prompt = '';
     if (action === 'grammar') {
@@ -891,26 +915,31 @@ const rewriteMenuStyles = `
         e.stopPropagation();
         const rewriteBtn = e.currentTarget;
         rewriteBtn.classList.add('active');
-  
+
         if (rewriteDropdown && rewriteDropdown.parentNode) return;
-  
+
         rewriteDropdown = document.createElement('div');
         rewriteDropdown.className = 'spellai-rewrite-menu';
-  
+
+        // --- Get and validate selected text ---
+        const selectedText = getSelectedText(lastTarget);
+        const isWhitespaceOnly = isOnlyWhitespace(selectedText);
+        const hasThreeWords = hasMinimumWords(selectedText);
+
         tones.forEach(tone => {
           const toneBtn = document.createElement('button');
           toneBtn.type = 'button';
           toneBtn.className = 'spellai-tone-btn';
           toneBtn.dataset.label = tone.label;
           toneBtn.style.position = 'relative'; // Required for label positioning
-  
+
           if (tone.icon.startsWith('<')) {
             toneBtn.innerHTML = tone.icon;
           } else {
             toneBtn.textContent = tone.icon;
             toneBtn.style.fontSize = '16px';
           }
-  
+
           // [MODIFIED] Added hover label logic directly to the dropdown buttons
           const hoverLabel = document.createElement('div');
           hoverLabel.textContent = tone.label;
@@ -932,23 +961,40 @@ const rewriteMenuStyles = `
           toneBtn.onmouseleave = () => { hoverLabel.style.opacity = '0'; };
           toneBtn.appendChild(hoverLabel);
           // End of hover label logic
-  
+
           if (selectedTone === tone.key) {
             toneBtn.classList.add('selected');
           }
-  
+
+          // Disable button if whitespace or not enough words
+          if (isWhitespaceOnly || !hasThreeWords) {
+            toneBtn.disabled = true;
+            toneBtn.style.opacity = '0.5';
+            toneBtn.style.cursor = 'not-allowed';
+          }
+
           toneBtn.addEventListener('pointerdown', function(ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            selectedTone = tone.key;
-            const selectedText = getSelectedText(lastTarget);
-            if (selectedText) {
-              handleActionReplace(selectedTone, selectedText, lastTarget);
-              closeDropdown();
-            } else {
+            
+            // Check for whitespace
+            if (isWhitespaceOnly) {
               showModal('No text selected.');
               removeMenu();
+              return;
             }
+
+            // Check for minimum words
+            if (!hasThreeWords) {
+              showModal('Please select at least 3 words to use rewrite options.');
+              removeMenu();
+              return;
+            }
+
+            selectedTone = tone.key;
+            const selectedTextNow = getSelectedText(lastTarget);
+            handleActionReplace(selectedTone, selectedTextNow, lastTarget);
+            closeDropdown();
           });
           rewriteDropdown.appendChild(toneBtn);
         });
@@ -1098,7 +1144,7 @@ const rewriteMenuStyles = `
     overlay.appendChild(box);
 
     const label = document.createElement('div');
-    label.textContent = 'Let’s Tweak It';
+    label.textContent = 'Let Tweak It';
     label.className = 'ask-modal-label'; // Apply label style
     box.appendChild(label);
 
@@ -1158,8 +1204,8 @@ Your job is to respond **intelligently** and **clearly** by following these rule
 
 1. **Relevance Check**  
    - Determine if the query refers to or depends on the selectedText.
-   - If yes (e.g., “Tell me about this person” and selectedText is “Cristiano Ronaldo”), treat selectedText as the main topic.
-   - If not (e.g., “What is an LLM?” and selectedText is unrelated), ignore selectedText completely and answer the query as standalone.
+   - If yes (e.g., "Tell me about this person" and selectedText is "Cristiano Ronaldo"), treat selectedText as the main topic.
+   - If not (e.g., "What is an LLM?" and selectedText is unrelated), ignore selectedText completely and answer the query as standalone.
 
 2. **Generate Answer**  
    - If related, write a rich, informative, natural-sounding paragraph using selectedText as context.
@@ -1168,14 +1214,14 @@ Your job is to respond **intelligently** and **clearly** by following these rule
 
 3. **Avoid Media-Based Queries**  
    - If the query refers to an image, link, or file, respond only with:  
-     “Please ask a clear, text-based question. I cannot respond to media-based inputs.”
+     "Please ask a clear, text-based question. I cannot respond to media-based inputs."
 
 4. **Output Format**  
    - Output only the final answer as plain text.  
    - Never ever include any markdown, code blocks, or special formatting. (If you do you wil lose your job)
    - You can use - and * for bullet points, but do not use any other formatting like bold, italics, or headings.
    - Do not include any labels, tags, relevance explanation, or formatting syntax.  
-   - Do not start with phrases like “The query is unrelated...” or “Based on the input...” — just give the clean final answer.
+   - Do not start with phrases like "The query is unrelated..." or "Based on the input..." — just give the clean final answer.
 
 Inputs:  
 selectedText: "${selectedText}"  
@@ -1244,7 +1290,9 @@ Respond below:
     });
 
     // Focus on the textarea when the modal opens
-    textarea.focus();
+    setTimeout(() => {
+      textarea.focus();
+    }, 0);
   }
 
   // Listen for selection in input/textarea/contenteditable (mouse or keyboard)
@@ -1390,16 +1438,17 @@ Respond below:
   document.addEventListener('keydown', async function(ev) {
     if (window.spellaiIsProcessing) return;
     if (spellaiMode !== 'shortcut') return;
-    // Check if focus is in an editable field
+    
     let target = document.activeElement;
     if (!target) return;
+    
     const isInput = (target.tagName === 'INPUT' && target.type === 'text') || target.tagName === 'TEXTAREA';
     const isEditable = target.isContentEditable;
     if (!isInput && !isEditable) return;
-    // Check if there is a selection
+    
     let selected = getSelectedText(target);
-    if (!selected || selected.trim() === '') return;
-    // Check which shortcut was pressed
+    if (!selected) return;
+    
     const pressed = normalizeShortcut(ev);
     let matched = null;
     for (const action in spellaiShortcuts) {
@@ -1409,12 +1458,26 @@ Respond below:
       }
     }
     if (!matched) return;
+    
     ev.preventDefault();
     ev.stopPropagation();
-    if (matched === 'generate') {
-      showAskModal(selected, target);
-    } else {
+    
+    if (['grammar','humanize','professional'].includes(matched)) {
+      // Check for whitespace
+      if (isOnlyWhitespace(selected)) {
+        showModal('No text selected.');
+        return;
+      }
+      
+      // Check for minimum words
+      if (!hasMinimumWords(selected)) {
+        showModal('Please select at least 3 words to use rewrite options.');
+        return;
+      }
+      
       await handleActionReplace(matched, selected, target);
+    } else if (matched === 'generate') {
+      showAskModal(selected, target);
     }
   }, true);
   // --- Suppress popup menu in shortcut mode ---
