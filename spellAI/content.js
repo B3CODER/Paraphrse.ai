@@ -221,18 +221,18 @@ const rewriteMenuStyles = `
         position: absolute;
         top: 100%;
         left: 32px;
-        margin-top: 0px; /* Space between the main bar and this menu */
+        // margin-top: 0px; /* Space between the main bar and this menu */
         
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 5px; /* Space between icon buttons */
+        gap: 3px; /* Space between icon buttons */
         
         background: var(--white, #FFF);
         border: 0.5px solid var(--dark, #1A1A1A);
 
         border-radius: 14%;
-        padding: 3px;
+        padding: 2px;
         z-index: 2147483648;
     }
 
@@ -360,23 +360,29 @@ const rewriteMenuStyles = `
     if (!sel.rangeCount) return null;
     const range = sel.getRangeAt(0).cloneRange();
     const rects = range.getClientRects();
-    // Try to use the last non-zero rect
+    // Try to use the last non-zero rect (usually the visible end)
     for (let i = rects.length - 1; i >= 0; i--) {
       if (rects[i].width > 0 && rects[i].height > 0) {
         return rects[i];
       }
     }
-    // Fallback: create a temporary span at the end of the range
-    const span = document.createElement('span');
-    span.appendChild(document.createTextNode('\u200b'));
-    range.collapse(false); // Collapse to end
-    range.insertNode(span);
-    const rect = span.getBoundingClientRect();
-    span.parentNode.removeChild(span);
-    // Restore selection
-    sel.removeAllRanges();
-    sel.addRange(range);
-    return rect;
+    // If no valid rect, try both ends of the range
+    function getCaretRect(collapseToStart) {
+      const tempRange = range.cloneRange();
+      tempRange.collapse(collapseToStart);
+      const span = document.createElement('span');
+      span.appendChild(document.createTextNode('\u200b'));
+      tempRange.insertNode(span);
+      const rect = span.getBoundingClientRect();
+      span.parentNode.removeChild(span);
+      return rect;
+    }
+    // Try end first (for left-to-right), then start (for right-to-left)
+    let endRect = getCaretRect(false);
+    if (endRect.width > 0 && endRect.height > 0) return endRect;
+    let startRect = getCaretRect(true);
+    if (startRect.width > 0 && startRect.height > 0) return startRect;
+    return null;
   }
 
   // Helper to get selected text from input, textarea, or contenteditable
@@ -767,22 +773,22 @@ const rewriteMenuStyles = `
       menu.id = 'spellai-menu';
       menu.style.position = 'fixed';
       menu.style.top = `${y + 5}px`;
-      menu.style.left = `${x + 5}px`;
+      menu.style.left = `${x + 2}px`;
       
       menu.style.background = '#ECF0F3';
       menu.style.border = 'none';
-      menu.style.borderRadius = '12px';
+      menu.style.borderRadius = '7px';
       // [MODIFIED] Using the new CSS variable for a clean shadow.
       menu.style.boxShadow = '0 5px 15px var(--shadow-color-hover)';
       
-      menu.style.padding = '4px';
+      menu.style.padding = '1px';
       menu.style.display = 'flex';
       menu.style.flexDirection = 'row';
       menu.style.alignItems = 'center';
-      menu.style.gap = '4px';
+      menu.style.gap = '-4px';
       menu.style.zIndex = 2147483647;
       menu.style.fontFamily = 'sans-serif';
-      menu.style.height = '36px';
+      menu.style.height = '30px';
       menu.style.maxWidth = 'fit-content';
       menu.style.transition = 'opacity 0.2s ease-in-out';
   
@@ -958,8 +964,8 @@ const rewriteMenuStyles = `
         const vh = window.innerHeight;
 
         // Default: left-aligned, slightly below the rewrite button (8px gap)
-        let dropdownLeft = rewriteBtn.offsetLeft;
-        let dropdownTop = rewriteBtn.offsetTop + rewriteBtn.offsetHeight + 8;
+        let dropdownLeft = rewriteBtn.offsetLeft -10;
+        let dropdownTop = rewriteBtn.offsetTop + rewriteBtn.offsetHeight + 2;
 
         // Calculate absolute position relative to viewport
         let absLeft = menuRect.left + dropdownLeft;
