@@ -211,6 +211,24 @@ const askModalStyles = `
   .apply-button:active {
       transform: translateY(1px);
   }
+
+  /* --- Copyright Footer --- */
+  .copyright-footer {
+      margin-top: 15px;
+      text-align: center;
+      color: #999999;
+      font-size: 12px;
+  }
+  
+  .copyright-footer a {
+      color: #999999;
+      text-decoration: underline;
+      transition: color 0.2s ease;
+  }
+  
+  .copyright-footer a:hover {
+      color: var(--bauhaus-blue);
+  }
 `;
 
 // [MODIFIED] The CSS causing the duplicate tooltip has been removed from this section.
@@ -1086,6 +1104,54 @@ const rewriteMenuStyles = `
       attachOutsideHandler();
   }
 
+  function getCaretCoordsAtIndex(input, index) {
+    // Only works for <input type="text"> and <textarea>
+    if (!input || (input.tagName !== 'TEXTAREA' && !(input.tagName === 'INPUT' && input.type === 'text'))) return null;
+    const isInput = input.tagName === 'INPUT';
+    const value = input.value;
+    // Create a hidden mirror div
+    const div = document.createElement('div');
+    const style = window.getComputedStyle(input);
+    // Copy relevant styles
+    div.style.position = 'absolute';
+    div.style.visibility = 'hidden';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordWrap = 'break-word';
+    div.style.font = style.font;
+    div.style.fontSize = style.fontSize;
+    div.style.fontFamily = style.fontFamily;
+    div.style.fontWeight = style.fontWeight;
+    div.style.letterSpacing = style.letterSpacing;
+    div.style.padding = style.padding;
+    div.style.border = style.border;
+    div.style.boxSizing = style.boxSizing;
+    div.style.width = isInput ? style.width : input.offsetWidth + 'px';
+    div.style.height = isInput ? style.height : input.offsetHeight + 'px';
+    div.style.lineHeight = style.lineHeight;
+    div.style.background = 'transparent';
+    div.style.left = '-9999px';
+    div.style.top = '0';
+    // Set mirror text up to caret
+    let before = value.substring(0, index);
+    let after = value.substring(index);
+    // Replace spaces and newlines for accurate rendering
+    before = before.replace(/ /g, '\u00a0').replace(/\n/g, '\n');
+    after = after.replace(/ /g, '\u00a0').replace(/\n/g, '\n');
+    div.textContent = before;
+    // Create a span for caret
+    const caretSpan = document.createElement('span');
+    caretSpan.textContent = after.length === 0 ? '\u200b' : after[0];
+    div.appendChild(caretSpan);
+    document.body.appendChild(div);
+    const rect = caretSpan.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+    // Calculate coordinates relative to viewport
+    const x = inputRect.left + (rect.left - div.getBoundingClientRect().left);
+    const y = inputRect.top + (rect.top - div.getBoundingClientRect().top);
+    document.body.removeChild(div);
+    return { x, y };
+  }
+  
   // ESC key closes the popup menu
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && menu) {
@@ -1144,7 +1210,7 @@ const rewriteMenuStyles = `
     overlay.appendChild(box);
 
     const label = document.createElement('div');
-    label.textContent = 'Let Tweak It';
+    label.textContent = "Paraphrase with AI";
     label.className = 'ask-modal-label'; // Apply label style
     box.appendChild(label);
 
@@ -1171,6 +1237,12 @@ const rewriteMenuStyles = `
     const suggestionBox = document.createElement('div');
     suggestionBox.className = 'suggestion-box'; // Apply suggestion box style
     box.appendChild(suggestionBox);
+
+    // Add copyright footer
+    const copyright = document.createElement('div');
+    copyright.className = 'copyright-footer';
+    copyright.innerHTML = '© Powered by <a href="https://webosmotic.com/" target="_blank">WebOsmotic</a>';
+    box.appendChild(copyright);
 
     generateBtn.onclick = async function(e) {
       e.stopPropagation();
@@ -1289,10 +1361,22 @@ Respond below:
       }
     });
 
-    // Focus on the textarea when the modal opens
+    // --- Clean, robust focus logic for textarea in Ask Modal ---
+    // 1. Focus the textarea after modal is attached
     setTimeout(() => {
       textarea.focus();
     }, 0);
+
+    // 2. If focus fails, refocus on first user interaction inside the modal
+    let focusOnce = false;
+    function ensureFocus() {
+      if (!focusOnce && document.activeElement !== textarea) {
+        textarea.focus();
+        focusOnce = true;
+      }
+    }
+    box.addEventListener('pointerdown', ensureFocus, { once: true });
+    box.addEventListener('keydown', ensureFocus, { once: true });
   }
 
   // Listen for selection in input/textarea/contenteditable (mouse or keyboard)
@@ -1531,6 +1615,14 @@ Respond below:
           removeMenu();
         }
       }
+    }
+  });
+
+  document.addEventListener('keyup', function(e) {
+    if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
+      setTimeout(() => {
+        showMenuIfSelectionPatched(e);
+      }, 0);
     }
   });
 

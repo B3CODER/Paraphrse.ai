@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Paraphrase AI - Gemini API Key</title>
+    <title>Paraphrase AI</title>
     <script src="popup.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -15,6 +15,7 @@
             --red: #f6543c;
             --dark: #1A1A1A;
             --white: #FFFFFF;
+            --light-gray: #999999;
         }
         
         /* --- UPDATED: Body Styling Removed --- */
@@ -276,6 +277,25 @@
             font-size: 13px;
             line-height: 1.5;
         }
+
+        /* Copyright Footer */
+        .copyright {
+            margin-top: 30px;
+            color: var(--light-gray);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .copyright a {
+            color: var(--light-gray);
+            display: inline;
+            margin-top: 0;
+            font-size: 12px;
+        }
+
+        .copyright a:hover {
+            color: var(--green);
+        }
     </style>
 </head>
 
@@ -345,6 +365,10 @@
             <div>
                 <b>Instructions:</b> Select text and press the shortcut to trigger the action. You can customize shortcuts above.
             </div>
+        </div>
+
+        <div class="copyright">
+            © Powered by <a href="https://webosmotic.com/" target="_blank">WebOsmotic</a>
         </div>
     </div>
     
